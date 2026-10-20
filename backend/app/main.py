@@ -94,7 +94,7 @@ def create_app(
     # Without a built dist directory (e.g. tests and local Vite development),
     # this block is intentionally inert.
     frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
-    if (frontend_dist.is_dir():
+    if frontend_dist.is_dir():
         assets = frontend_dist / "assets"
         if assets.is_dir():
             app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
