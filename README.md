@@ -18,16 +18,16 @@ Open the address printed by Vite. To serve on a specific interface, use `npm run
 
 | Route | Status |
 | --- | --- |
-| `/` — Dashboard | Three mock career paths, loading/error/empty states, temporary career selection |
-| `/careers` — Career Paths | Frontend, backend and data analyst roadmaps; seeded skill statuses, prerequisites and completion progress |
+| `/` — Dashboard | Personal selected paths, unique-skill progress, completion/verification, skill gaps and explained recommendations |
+| `/careers` — Career Paths | Service-backed single/multiple path selection, skill roadmaps, prerequisites and progress |
 | `/graph` — Skill Graph | Placeholder |
 | `/learning` — Learning | Placeholder |
 | `/analytics` — Analytics | Placeholder |
 | `/login`, `/signup` — Account | Accessible mock login, registration, demo sign-in and session states |
 
-Unknown routes show a page-not-found screen. The desktop sidebar and mobile modal drawer link to all five routes. Navigation supports visible keyboard focus, a skip link, an active-route indicator, Escape dismissal and focus restoration. Visitors see explicitly labelled sample progress. Registered mock users have their own in-memory progress; switching accounts refreshes personalized views. Dashboard career selection remains temporary component state.
+Unknown routes show a page-not-found screen. The desktop sidebar and mobile modal drawer link to all five routes. Navigation supports visible keyboard focus, a skip link, an active-route indicator, Escape dismissal and focus restoration. Visitors see explicitly labelled sample progress. Registered mock users have their own in-memory progress; switching accounts refreshes personalized views. Career selections are saved through the service for the current mock instance and update the Dashboard after confirmation. Shared skills count once across selected paths.
 
-The replaceable `DevAtlasService` contract supplies users, careers, shared skills/dependencies, per-user progress/history, resources, practical tasks, quizzes/attempts, analytics and deterministic recommendations. The mock supports validated in-memory updates, quiz scoring and configurable loading/empty/error states. Fixtures include 10 unique skills shared across the three paths, with one five-question quiz per skill. See [mock service contract and scenarios](_docs/mock-service.md).
+The replaceable `DevAtlasService` contract supplies users, careers, shared skills/dependencies, per-user progress/history, resources, practical tasks, quizzes/attempts, analytics and deterministic recommendations. The mock supports validated in-memory updates, quiz scoring and configurable loading/empty/error states. Fixtures include 10 unique skills shared across the three paths, with one five-question quiz per skill. See [mock service contract and scenarios](_docs/mock-service.md) and [career selection/dashboard conventions](_docs/career-dashboard.md).
 
 To try the seeded demo account, open `/login` and choose **Try mock demo account**; no demo password is displayed or required. Alternatively, register a test account with a name, email and an 8–128 character password. Accounts, sessions and changes last only until a full page reload; this is a frontend prototype, not production authentication. See [mock authentication](_docs/mock-auth.md) for service usage and limitations.
 
@@ -45,7 +45,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of downloading a browser. Vitest covers fixtures, service behavior, authentication validation and account isolation; browser tests cover routes, actual mock scenarios, component semantics and desktop/mobile keyboard interaction. They start a dedicated Vite server on port 4173. See [Issue #3 QA evidence](_docs/issue-3-qa.md), [Issue #2 QA evidence](_docs/issue-2-qa.md) and the earlier [Issue #1 QA checklist](_docs/issue-1-qa.md).
+For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of downloading a browser. Vitest covers fixtures, service behavior, authentication validation and account isolation; browser tests cover routes, actual mock scenarios, component semantics and desktop/mobile keyboard interaction. They start a dedicated Vite server on port 4173. See [Issue #4 QA evidence](_docs/issue-4-qa.md), [Issue #3 QA evidence](_docs/issue-3-qa.md), [Issue #2 QA evidence](_docs/issue-2-qa.md) and the earlier [Issue #1 QA checklist](_docs/issue-1-qa.md).
 
 ## Project workflow
 

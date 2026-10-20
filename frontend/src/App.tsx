@@ -1,143 +1,21 @@
 
 import { useEffect, useRef, useState } from 'react'
-import { Link, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import {
   Compass,
-  Network,
-  ArrowRight,
   Menu,
 } from 'lucide-react'
 
 import { service } from './services'
-import { useCareerRoadmaps } from './hooks/useCareerRoadmaps'
 import PlaceholderPage from './pages/PlaceholderPage'
 import CareerPathsPage from './pages/CareerPathsPage'
 import SidebarNavigation from './components/SidebarNavigation'
 import Button from './components/ui/Button'
-import Card from './components/ui/Card'
 import Dialog from './components/ui/Dialog'
 import AuthPage from './pages/AuthPage'
+import CareerProvider from './careers/CareerProvider'
+import DashboardPage from './pages/DashboardPage'
 import { useAuth } from './auth/authContext'
-
-function Dashboard() {
-  const { careers, loading, error } = useCareerRoadmaps(service)
-  const [selected, setSelected] = useState('')
-
-  return (
-    <div className="mx-auto max-w-6xl px-6 py-12 md:px-12">
-      <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-400">
-        Your future in technology
-      </p>
-
-      <h1 className="max-w-3xl text-4xl font-bold leading-tight md:text-6xl">
-        Find your direction.
-        <span className="block text-indigo-400">
-          Master your next skill.
-        </span>
-      </h1>
-
-      <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-        Explore IT careers, discover your skill gaps,
-        and build a personalized learning roadmap.
-      </p>
-
-      <div className="mb-6 mt-14 flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-bold">
-          Explore career paths
-        </h2>
-        <span className="text-sm text-slate-400">
-          {careers.length} paths available
-        </span>
-      </div>
-
-      {loading && (
-        <p role="status" className="mb-6 text-slate-400">
-          Loading career paths...
-        </p>
-      )}
-
-      {error && (
-        <p role="alert" className="mb-6 text-red-400">
-          Failed to load career paths.
-        </p>
-      )}
-
-      {!loading && !error && careers.length === 0 && (
-        <p className="text-slate-400">
-          No career paths available.
-        </p>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {careers.map((career) => (
-          <Card
-            key={career.id}
-            highlighted={selected === career.id}
-            className="transition hover:border-indigo-400/50"
-          >
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400">
-              <Network size={24} aria-hidden="true" />
-            </div>
-
-            <h3 className="text-xl font-bold">
-              {career.name}
-            </h3>
-
-            <p className="mt-3 min-h-16 text-sm leading-6 text-slate-400">
-              {career.description}
-            </p>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {career.skills.map((skill) => (
-                <span
-                  key={skill.id}
-                  className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-300"
-                >
-                  {skill.name}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-6 text-sm text-slate-400">
-              {career.skills.length} skills in this path
-            </div>
-
-            <Button
-              onClick={() => setSelected(career.id)}
-              aria-pressed={selected === career.id}
-              className="mt-6 w-full"
-            >
-              {selected === career.id ? 'Selected' : 'Explore path'}
-              <ArrowRight size={18} aria-hidden="true" />
-            </Button>
-          </Card>
-        ))}
-      </div>
-
-      {selected && (
-        <div
-          role="status"
-          className="mt-8 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-5"
-        >
-          <h3 className="font-semibold">
-            {careers.find((career) => career.id === selected)?.name} selected!
-          </h3>
-
-          <p className="mt-2 text-sm text-slate-400">
-            Demo mode: your selection is not saved yet.
-          </p>
-
-          <Link
-            to="/careers"
-            className="mt-4 inline-block text-indigo-400 hover:underline"
-          >
-            View career paths →
-          </Link>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function App() {
   const { session } = useAuth()
@@ -214,18 +92,16 @@ export default function App() {
 
         <main id="main-content" ref={mainRef} tabIndex={-1}>
           <Routes>
+            <Route element={<CareerProvider key={dataKey} service={service} signedIn={!!session}><Outlet /></CareerProvider>}>
             <Route
               path="/"
-              element={<Dashboard key={dataKey} />}
+              element={<DashboardPage />}
             />
 
             <Route
               path="/careers"
               element={<CareerPathsPage key={dataKey} />}
             />
-
-            <Route path="/login" element={<AuthPage key="login" mode="login" />} />
-            <Route path="/signup" element={<AuthPage key="signup" mode="signup" />} />
 
             <Route
               path="/graph"
@@ -266,6 +142,9 @@ export default function App() {
                 />
               }
             />
+            </Route>
+            <Route path="/login" element={<AuthPage key="login" mode="login" />} />
+            <Route path="/signup" element={<AuthPage key="signup" mode="signup" />} />
           </Routes>
         </main>
       </div>
