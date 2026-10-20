@@ -118,17 +118,13 @@ test('mobile navigation closes after selection and when switching to desktop', a
 
 for (const state of ['loading', 'empty', 'error'] as const) {
   test(`dashboard and career page show the ${state} service state`, async ({ page }) => {
-    await page.route('**/src/services/mockService.ts', (route) => route.fulfill({
-      contentType: 'application/javascript',
-      body: `export const mockService = { getCareerPaths: async () => { ${
-        state === 'loading' ? 'return new Promise(() => {})' :
-          state === 'empty' ? 'return []' : 'throw new Error("Test service failure")'
-      } } }`,
-    }))
     for (const path of ['/', '/careers']) {
-      await page.goto(path)
+      const query = state === 'loading' ? 'mockLatencyMs=1500' : `mockScenario=${state}`
+      await page.goto(`${path}?${query}`)
       if (state === 'loading') {
         await expect(page.getByRole('status')).toHaveText('Loading career paths...')
+        if (path === '/') await expect(page.getByText('3 paths available')).toBeVisible()
+        else await expect(page.getByRole('progressbar')).toBeVisible()
         continue
       } else if (state === 'empty') await expect(page.getByText('No career paths available.')).toBeVisible()
       else await expect(page.getByRole('alert')).toContainText(/load career paths/)
@@ -138,9 +134,12 @@ for (const state of ['loading', 'empty', 'error'] as const) {
 }
 
 test('career roadmap handles a dataset without the default frontend career', async ({ page }) => {
-  await page.route('**/src/services/mockService.ts', (route) => route.fulfill({
+  await page.route('**/src/services/index.ts', (route) => route.fulfill({
     contentType: 'application/javascript',
-    body: 'export const mockService = { getCareerPaths: async () => [{ id: "backend", name: "Backend Developer", description: "Backend roadmap", skills: [] }] }',
+    body: `export const service = {
+      getCareerPaths: async () => [{ id: "backend", name: "Backend Developer", description: "Backend roadmap", skillIds: [] }],
+      getSkills: async () => [], getDependencies: async () => [], getProgress: async () => [],
+    }`,
   }))
   await page.goto('/careers')
   await expect(page.getByRole('button', { name: /Backend Developer/ })).toHaveAttribute('aria-pressed', 'true')

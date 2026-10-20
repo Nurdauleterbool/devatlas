@@ -8,8 +8,8 @@ import {
   Menu,
 } from 'lucide-react'
 
-import { mockService } from './services/mockService'
-import type { CareerPath } from './services/mockService'
+import { service } from './services'
+import { useCareerRoadmaps } from './hooks/useCareerRoadmaps'
 import PlaceholderPage from './pages/PlaceholderPage'
 import CareerPathsPage from './pages/CareerPathsPage'
 import SidebarNavigation from './components/SidebarNavigation'
@@ -18,31 +18,8 @@ import Card from './components/ui/Card'
 import Dialog from './components/ui/Dialog'
 
 function Dashboard() {
-  const [careers, setCareers] = useState<CareerPath[]>([])
+  const { careers, loading, error } = useCareerRoadmaps(service)
   const [selected, setSelected] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    let active = true
-
-    mockService
-      .getCareerPaths()
-      .then((data) => {
-        if (!active) return
-        setCareers(data)
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!active) return
-        setError('Failed to load career paths.')
-        setLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 md:px-12">
@@ -79,7 +56,7 @@ function Dashboard() {
 
       {error && (
         <p role="alert" className="mb-6 text-red-400">
-          {error}
+          Failed to load career paths.
         </p>
       )}
 
