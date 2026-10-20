@@ -27,7 +27,10 @@ Factory = Annotated[RepositoryFactory, Depends(factory_from_request)]
 CurrentUser = Annotated[PublicUser, Depends(require_user)]
 
 def owned(factory: RepositoryFactory, owner: str) -> list[dict]:
-    return [item for item in factory.create("selected_careers").list() if item["userId"] == owner]
+    return [
+        {key: item[key] for key in ("userId", "careerId", "selectedAt")}
+        for item in factory.create("selected_careers").list() if item["userId"] == owner
+    ]
 
 @router.get("/me/careers", response_model=list[UserCareerPath], operation_id="getSelectedCareers")
 def get_careers(factory: Factory, user: CurrentUser):
