@@ -9,6 +9,7 @@ from .auth import AuthManager, router as auth_router
 from .catalogue import router as catalogue_router
 from .catalogue_seed import seed_catalogue
 from .progress import ProgressManager, router as progress_router
+from .quizzes import QuizManager, router as quiz_router
 from .config import Settings
 from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 
@@ -27,6 +28,7 @@ def create_app(
     app.state.settings = settings
     app.state.auth = AuthManager(factory)
     app.state.progress_manager = ProgressManager(factory, app.state.auth)
+    app.state.quiz_manager = QuizManager(factory, app.state.auth)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
@@ -52,6 +54,7 @@ def create_app(
         if (request.url.path.startswith("/api/v1/auth/")
                 or request.url.path.startswith("/api/v1/me/")
                 or request.url.path == "/api/v1/progress"
+                or request.url.path.startswith("/api/v1/quizzes/")
                 or response.status_code >= 400):
             response.headers["Cache-Control"] = "no-store"
         return response
@@ -59,6 +62,7 @@ def create_app(
     app.include_router(auth_router)
     app.include_router(catalogue_router)
     app.include_router(progress_router)
+    app.include_router(quiz_router)
 
     @app.get("/api/v1/health", response_model=HealthResponse, tags=["Operations"])
     def health() -> HealthResponse:
