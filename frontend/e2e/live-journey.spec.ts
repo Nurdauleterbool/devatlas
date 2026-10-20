@@ -63,3 +63,40 @@ test('live FastAPI journey: signup, path, graph, quiz, analytics, reload and sec
   } finally { await second.close() }
   expect(errors).toEqual([])
 })
+
+
+test('live keyboard and responsive accessibility smoke checks', async ({ page }) => {
+  const runtimeErrors: string[] = []
+  page.on('pageerror', (error) => runtimeErrors.push(error.message))
+  for (const width of [320, 375, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+    const mobileToggle = page.getByRole('button', { name: 'Open navigation' })
+    if (await mobileToggle.isVisible()) {
+      await mobileToggle.click()
+      await expect(page.getByRole('dialog').getByRole('navigation')).toBeVisible()
+      await page.keyboard.press('Escape')
+    } else {
+      await expect(navigation).toBeVisible()
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    const links = page.getByRole('link')
+    expect(await links.count()).toBeGreaterThan(0)
+    const skip = page.getByRole('link', { name: /skip to main content/i })
+    if (await skip.count()) {
+      await skip.focus()
+      await expect(skip).toBeFocused()
+    }
+  }
+  await page.goto('/signup')
+  for (const label of ['Name', 'Email', 'Password', 'Confirm password']) {
+    await expect(page.getByLabel(label, { exact: true })).toBeVisible()
+  }
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('alert').first()).toBeVisible()
+  await page.goto('/analytics')
+  await expect(page.getByText('Your progress belongs to you')).toBeVisible()
+  expect(runtimeErrors).toEqual([])
+})
