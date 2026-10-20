@@ -1,4 +1,5 @@
 """FastAPI composition root with versioned authentication and health routes."""
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,8 @@ from .progress import ProgressManager, router as progress_router
 from .quizzes import QuizManager, router as quiz_router
 from .config import Settings
 from .repositories import InMemoryRepositoryFactory, RepositoryFactory
+from .db import make_engine, make_session_factory
+from .sql_repositories import SQLAlchemyRepositoryFactory
 
 class HealthResponse(BaseModel):
     status: str
@@ -22,7 +25,20 @@ def create_app(
     repository_factory: RepositoryFactory | None = None,
 ) -> FastAPI:
     settings = settings if settings is not None else Settings()
-    factory = repository_factory if repository_factory is not None else InMemoryRepositoryFactory()
+    # Existing unit tests and injected repositories remain memory-backed.
+    # The deployed `app` instance selects SQLite by configuration.
+    if repository_factory is not None:
+        factory = repository_factory
+    elif settings.storage_backend == "sqlite":
+        from alembic import command
+        from alembic.config import Config
+        config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        config.set_main_option("sqlalchemy.url", settings.database_url)
+        command.upgrade(config, "head")
+        engine = make_engine(settings.database_url)
+        factory = SQLAlchemyRepositoryFactory(make_session_factory(engine))
+    else:
+        factory = InMemoryRepositoryFactory()
     app = FastAPI(title=settings.app_name, version="0.1.0")
     seed_catalogue(factory)
     app.state.repositories = factory
@@ -73,4 +89,4 @@ def create_app(
 
     return app
 
-app = create_app()
+app = create_app(settings=Settings(storage_backend="sqlite"))
