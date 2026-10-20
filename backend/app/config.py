@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,3 +8,5 @@ class Settings(BaseSettings):
     app_name: str = "DevAtlas API"
     frontend_origin: str = "http://localhost:5173"
     environment: str = "development"
+    storage_backend: Literal["memory", "sqlite"] = "memory"
+    database_url: str = "sqlite:///./devatlas.db"
