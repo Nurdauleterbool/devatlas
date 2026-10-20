@@ -10,18 +10,15 @@ uvicorn app.main:app --reload
 python -m pytest -q
 ```
 
-All URLs use `/api/v1`.
+API prefix: `/api/v1`. Routes:
+- Health: `GET /health`.
+- Auth: `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me`.
+- Public catalogue: `/career-paths`, `/skills`, `/dependencies`, skill resources and practice tasks.
+- Progress: `GET /progress` (authenticated or synthetic anonymous), `PUT /me/progress/{skillId}` (status only), `GET /me/progress/history`.
+- Quizzes: `GET /skills/{skillId}/quiz`, `POST /quizzes/{quizId}/attempts`, `GET /me/quiz-attempts`.
+- Analytics: `GET /me/analytics` authenticated, shows shared-skill counts, all career summaries, attempts and learning history.
+- Recommendations: `GET /career-paths/{careerId}/recommendations` authenticated or neutral anonymous preview. Completed/verified and locked skills are excluded; continue-learning precedes start-next.
 
-- `GET /health` — readiness
-- `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me` — session and account access
-- `GET /career-paths`, `GET /skills`, `GET /dependencies`, skill resources and practice — public catalogue
-- `GET /progress` — signed-in progress or synthetic anonymous preview
-- `PUT /me/progress/{skillId}` with `{"status":"learning"}` — authenticated owner-only mutation
-- `GET /me/progress/history` — chronological signed-in history
-- `GET /skills/{skillId}/quiz` — public multiple-choice quiz without answer keys
-- `POST /quizzes/{quizId}/attempts` with `{"responses":[{"questionId":"html-q1","optionId":"html-q1-o2"}, ...]}` — authenticated grading and retained attempt; no client score or user ID
-- `GET /me/quiz-attempts` (optional `quizId`) — signed-in owner's attempts only
+Authentication uses hashed passwords, opaque HttpOnly cookie sessions, and server-side access controls. No raw quiz grading keys are exposed before a submission. Set `DEVATLAS_FRONTEND_ORIGIN` and `DEVATLAS_ENVIRONMENT` for deployment settings.
 
-Quizzes are seeded from `app/quiz_data.json` and graded on the server. Correct IDs and explanations are returned only **after** successful submission. Five questions per skill; 80% passes (4/5). Unlimited retakes preserve best score and independent verification. See `_docs/api-contract.md` and `_docs/issue-14-qa.md`.
-
-`DEVATLAS_FRONTEND_ORIGIN` controls accepted CORS/browser mutation origin; `DEVATLAS_ENVIRONMENT=production` enables Secure cookies. Auth, progress and quiz attempts are in-memory until SQLite Issues #16–#18. Frontend switches from mock to HTTP in #19. Avoid multiworker or public production deployment at this stage.
+This stage uses in-memory repositories and is not production-safe with multiple workers. Persistence (#16–#18), frontend HTTP integration (#19) and full manual QA remain future work. See `_docs/api-contract.md` for authoritative API rules.
