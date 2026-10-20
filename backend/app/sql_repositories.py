@@ -103,3 +103,85 @@ class SQLAlchemyRepository(Repository[dict]):
             elif self.name == "quiz_attempts":
                 rows.sort(key=lambda row: row.submitted_at)
             return [decode(session, self.name, row) for row in rows]
+
+    def put(self, item_id: str, value: dict) -> None:
+        if not item_id:
+            raise ValueError("Item ID is required")
+        with self.lock, self.sessions.begin() as session:
+            name = self.name
+            if name == "career_paths":
+                session.merge(m.CareerPath(
+                    id=value["id"], name=value["name"], description=value["description"]
+                ))
+                session.flush()
+                session.execute(delete(m.PathSkill).where(m.PathSkill.career_id == value["id"]))
+                for pos, skill_id in enumerate(value["skillIds"]):
+                    session.add(m.PathSkill(career_id=value["id"], skill_id=skill_id, position=pos))
+                return
+            if name == "quizzes":
+                session.merge(m.Quiz(
+                    id=value["id"], skill_id=value["skillId"],
+                    title=value["title"], pass_threshold=value["passThreshold"]
+                ))
+                session.flush()
+                existing = session.scalars(select(m.QuizQuestion.id).where(
+                    m.QuizQuestion.quiz_id == value["id"]
+                )).all()
+                if existing:
+                    session.execute(delete(m.AnswerOption).where(m.AnswerOption.question_id.in_(existing)))
+                    session.execute(delete(m.QuizQuestion).where(m.QuizQuestion.quiz_id == value["id"]))
+                from .quizzes import quiz_seeds
+                keys = quiz_seeds()["answerKeys"]
+                for pos, question in enumerate(value["questions"]):
+                    grading = keys[question["id"]]
+                    session.add(m.QuizQuestion(
+                        id=question["id"], quiz_id=value["id"], prompt=question["prompt"],
+                        explanation=grading["explanation"], position=pos,
+                    ))
+                    for option_pos, option in enumerate(question["options"]):
+                        session.add(m.AnswerOption(
+                            id=option["id"], question_id=question["id"], text=option["text"],
+                            position=option_pos, is_correct=option["id"] == grading["correctOptionId"],
+                        ))
+                return
+            if name == "quiz_attempts":
+                data = {snake(k): v for k, v in value.items() if k not in ("responses", "skillId")}
+                session.add(m.QuizAttempt(**data))
+                for answer in value["responses"]:
+                    session.add(m.QuizResponse(
+                        attempt_id=value["id"],
+                        question_id=answer["questionId"], option_id=answer["optionId"],
+                    ))
+                return
+            data = {snake(k): v for k, v in value.items()}
+            if name == "sessions":
+                data["token_digest"] = item_id
+            if name == "dependencies":
+                data = {"skill_id": value["skillId"], "prerequisite_id": value["prerequisiteId"]}
+            if name == "selected_careers" and "position" not in data:
+                rows = session.scalars(select(m.UserCareer).where(
+                    m.UserCareer.user_id == data["user_id"]
+                )).all()
+                data["position"] = max((r.position for r in rows), default=-1) + 1
+            session.merge(self.model(**data))
+
+    def delete(self, item_id: str) -> bool:
+        with self.lock, self.sessions.begin() as session:
+            row = session.get(self.model, self._key(item_id))
+            if row is None:
+                return False
+            session.delete(row)
+            return True
+
+
+class SQLAlchemyRepositoryFactory(RepositoryFactory):
+    def __init__(self, sessions: sessionmaker):
+        self.sessions = sessions
+        self._lock = RLock()
+        self._repositories: dict[str, SQLAlchemyRepository] = {}
+
+    def create(self, name: str) -> Repository[dict]:
+        with self._lock:
+            if name not in self._repositories:
+                self._repositories[name] = SQLAlchemyRepository(name, self.sessions, self._lock)
+            return self._repositories[name]
