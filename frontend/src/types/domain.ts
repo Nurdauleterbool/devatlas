@@ -20,7 +20,7 @@ export interface SignUpInput extends LoginInput {
 }
 
 export interface AuthSession {
-  kind: 'mock'
+  kind: 'mock' | 'http'
   user: User
   authenticatedAt: Timestamp
 }
