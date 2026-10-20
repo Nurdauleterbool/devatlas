@@ -37,3 +37,12 @@ python -m pytest -q
 ```
 
 This creates local `devatlas.db` by default; set `DEVATLAS_DATABASE_URL=sqlite:////absolute/path/to/app.db` to override. Never commit local DB files. The schema includes 16 tables with relational and uniqueness constraints. See `_docs/issue-16-qa.md`.
+
+
+## Persistent SQLite backend (Issue #17)
+
+`uvicorn app.main:app --reload` uses SQLAlchemy-backed SQLite storage by default and runs the Alembic migration before seeding career, skill and quiz data. Set `DEVATLAS_DATABASE_URL=sqlite:////absolute/path/devatlas.db` to select a different database file. Test-created `create_app()` instances default to isolated in-memory storage; opt in explicitly with `create_app(Settings(storage_backend="sqlite", database_url=...))`.
+
+The SQL repository adapter preserves the existing service interface, saving users, hashed passwords, digest-keyed sessions, learning progress, immutable history and scored quiz attempts with answer responses. Seed routines are repeatable: reopening a database does not duplicate the ten skills or fifty questions. Run `python -m alembic upgrade head` manually to inspect or upgrade a database.
+
+SQLite persistence does not imply production-hardening or multi-worker concurrency safety. Stronger atomic workflows, foreign-key rollback and multi-user persistence verification are covered further in Issue #18.
