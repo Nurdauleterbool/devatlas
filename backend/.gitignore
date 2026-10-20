@@ -4,3 +4,8 @@ __pycache__/
 *.py[cod]
 .env
 *.egg-info/
+
+# Local SQLite state
+devatlas.db
+*.sqlite
+*.sqlite3
