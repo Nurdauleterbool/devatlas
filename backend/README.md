@@ -11,8 +11,15 @@ uvicorn app.main:app --reload
 python -m pytest -q
 ```
 
-The health endpoint is `GET /api/v1/health`. Auth endpoints provide signup, login, logout, session and current user. They use server-side PBKDF2 password digests, opaque HttpOnly cookies and session expiry. Set `DEVATLAS_FRONTEND_ORIGIN` and `DEVATLAS_ENVIRONMENT` as needed.
+Versioned API prefix: `/api/v1`.
 
-Issue #12 adds seven public career/skill catalogue routes, matching `_docs/openapi.yml`. The three career paths, ten skills and prerequisite edges are shared reference data. For complete skill detail, combine `GET /skills/{skillId}`, `GET /dependencies`, `GET /skills/{skillId}/resources` and `GET /skills/{skillId}/practice-tasks`. `GET /career-paths/{careerId}` contains `skillIds`, with definitions read through `GET /skills`.
+- Health: `GET /health`
+- Authentication: `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me`
+- Public catalogue: `/career-paths`, `/skills`, `/dependencies`, skill resources and practice tasks
+- Public/signed-in progress: `GET /progress`. Anonymous response contains synthetic `preview` rows with `not_started` state, not another user's data.
+- Signed-in status update: `PUT /me/progress/{skillId}` with `{"status":"learning"}`, allowed statuses: `not_started`, `learning`, `completed`.
+- Signed-in history: `GET /me/progress/history`.
 
-Personal progress, session-derived ownership and quizzes are implemented in later Issues (#13–#15); SQLite persistence follows in #16–#18. All current repositories are ephemeral per app and are not production-safe multiworker storage.
+Progress mutations require a valid session cookie; ownership is derived server-side. Changes append an immutable event; repeated identical statuses do not. Quiz verification and best scores are independently derived from stored attempts (quiz endpoints arrive in #14). Both history and progress are kept in memory and reset when the application restarts.
+
+Configuration: `DEVATLAS_FRONTEND_ORIGIN`, `DEVATLAS_ENVIRONMENT`. Cookies are HttpOnly, SameSite=Lax, and Secure in production. Current in-memory repositories are single-process only; SQL transactions and persistence are deferred to #16–#18. Frontend continues using mockService until #19.
