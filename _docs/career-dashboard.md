@@ -13,6 +13,8 @@ The UI reads only `DevAtlasService`. No fixture imports, adapter-specific calls,
 - Account changes create a fresh workspace and cancel queued intents; the service's existing session revision guards protect already-running requests. The keyed workspace stays mounted across all routes, including same-account visits to Login/Signup through browser history, so pending selection writes and refreshes survive navigation. Auth forms render as siblings outside the keyed provider so signup success/focus state is preserved when the account changes.
 - Logout/login retain each account's data in the same mock instance. A full page reload resets all mock accounts, session and selection according to the existing mock lifecycle; nothing is persisted to browser storage.
 
+Issue #6 extends this workspace with serialized progress writes and snapshot refreshes shared by skill views. Leaving a detail page does not abandon a successful mutation’s shared refresh. Detail views reconcile confirmed same-owner progress while retaining a separate unsaved form intention. Queued writes cancel on workspace cleanup; in-flight requests retain service ownership checks.
+
 ## Dashboard calculations
 
 Only selected careers contribute to the overview. Unique skill IDs form the union across paths; per-path totals come from `getAnalytics().careers`. Global analytics totals are deliberately not labelled as selected-path totals.

@@ -6,6 +6,8 @@
 
 Issue #5 adds a lazy-loaded React Flow graph built from the existing career workspace. A pure skillGraph transformation validates references and cycles, lays out the DAG deterministically, and derives states from current-user progress and completed/verified prerequisites. Node clicks and a native keyboard skill list open the same basic detail modal. See [graph QA evidence](issue-5-qa.md).
 
+Issue #6 shares resource/actionable skill details between the graph modal and standalone routes. Typed composition filters unsafe material and public quiz fields. Workspace-owned progress writes serialize across route remounts; serialized refreshes reconcile Dashboard, graph and detail progress while preserving unsaved form drafts. See [skill detail QA](issue-6-qa.md).
+
 ## Modules
 - React pages: Auth, Dashboard, Career Paths, Skill Graph, Skill Detail, Quiz, History/Profile.
 - Typed frontend service interface: `mockService` initially, `httpService` after integration.
