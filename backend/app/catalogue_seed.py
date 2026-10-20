@@ -129,7 +129,9 @@ def validate_catalogue(data: dict[str, list[dict]]) -> None:
 def seed_catalogue(factory: RepositoryFactory) -> None:
     """Seed only empty collections; supplied storage stays the source of truth."""
     validate_catalogue(CATALOGUE)
-    for name, rows in CATALOGUE.items():
+    # Skills must exist before foreign-key-linked career memberships and edges.
+    for name in ("skills", "career_paths", "dependencies", "learning_resources", "practice_tasks"):
+        rows = CATALOGUE[name]
         repository = factory.create(name)
         if repository.list():
             continue
