@@ -1,0 +1,68 @@
+name: Browser E2E
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/browser-e2e.yml"
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/browser-e2e.yml"
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install API
+        working-directory: backend
+        run: python -m pip install -e '.[test]'
+      - name: Install UI
+        working-directory: frontend
+        run: npm ci
+      - name: Install Chromium and system libraries
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Start isolated FastAPI
+        working-directory: backend
+        env:
+          DEVATLAS_DATABASE_URL: sqlite:///${{ runner.temp }}/devatlas-browser.sqlite3
+          DEVATLAS_FRONTEND_ORIGIN: http://127.0.0.1:4175
+        run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > "${{ runner.temp }}/fastapi.log" 2>&1 &
+          echo $! > "${{ runner.temp }}/fastapi.pid"
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health; then exit 0; fi
+            sleep 1
+          done
+          cat "${{ runner.temp }}/fastapi.log"
+          exit 1
+      - name: Mock browser regression journeys
+        working-directory: frontend
+        run: npm run test:e2e -- --workers=2
+      - name: Live full-stack browser journey
+        working-directory: frontend
+        run: npm run test:e2e -- --config=playwright.live.config.ts
+      - name: Upload browser reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-e2e-traces
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            ${{ runner.temp }}/fastapi.log
+          if-no-files-found: ignore
