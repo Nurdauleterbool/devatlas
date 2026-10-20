@@ -55,6 +55,8 @@ See [verified development progress and continuation checkpoint](_docs/developmen
 
 Read [AGENTS.md](AGENTS.md), [process.md](process.md), [_docs/plan.md](_docs/plan.md), [_docs/architecture.md](_docs/architecture.md), [_docs/issue-backlog.md](_docs/issue-backlog.md) and the relevant [role](roles/) before development. Work from an issue with testable acceptance criteria, use a separate branch/PR, and leave issue closure to QA.
 
+The [OpenAPI contract](_docs/openapi.yml) and [HTTP mapping/security decisions](_docs/api-contract.md) define the next backend boundary. Validate it using the isolated Python tooling described there.
+
 Required sequence: mock frontend → OpenAPI contract → in-memory FastAPI backend → SQLite via SQLAlchemy → frontend/backend integration → QA. Vitest and Playwright are installed for unit and browser tests. React Flow is installed for the interactive graph. Pytest remains part of the planned backend stage.
 
 `chat-brainstorm.md` is a decision summary, **not the complete original transcript**. Export the original chat and add it separately before submission.
