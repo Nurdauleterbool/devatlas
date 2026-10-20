@@ -49,6 +49,8 @@ For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of 
 
 ## Project workflow
 
+See [verified development progress and continuation checkpoint](_docs/development-progress.md) for actual issue/PR states and remaining dependencies.
+
 Read [AGENTS.md](AGENTS.md), [process.md](process.md), [_docs/plan.md](_docs/plan.md), [_docs/architecture.md](_docs/architecture.md), [_docs/issue-backlog.md](_docs/issue-backlog.md) and the relevant [role](roles/) before development. Work from an issue with testable acceptance criteria, use a separate branch/PR, and leave issue closure to QA.
 
 Required sequence: mock frontend → OpenAPI contract → in-memory FastAPI backend → SQLite via SQLAlchemy → frontend/backend integration → QA. Vitest and Playwright are installed for unit and browser tests. React Flow and Pytest remain part of the planned stack and are not installed yet.

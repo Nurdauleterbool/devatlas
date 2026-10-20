@@ -55,6 +55,7 @@ Desktop Dashboard (1440 px) and mobile Dashboard/Career Paths (320 px) screensho
 | `README.md`, `frontend/README.md` | Current features, usage, commands and lifecycle |
 | `_docs/architecture.md`, `_docs/mock-auth.md` | Updated workspace/session boundaries |
 | `_docs/career-dashboard.md`, `_docs/issue-4-qa.md` | Technical decisions and this QA evidence |
+| `_docs/development-progress.md`, `_docs/issue-4-pr.md` | Verified backlog, release blocker/checkpoint and prepared PR body |
 
 ## Additional manual reviewer checklist
 
@@ -71,3 +72,10 @@ These are suggested human checks, not claimed completed tests:
 Mock accounts, sessions, selections and progress reset on full reload. No server/storage or production authentication is introduced. Progress editing, quiz screens, graph interaction and detailed Analytics remain later issues. External changes from another tab/HTTP API are not subscribed to; current UI writes refresh the service view. Human screen-reader, Firefox/Safari and physical-device checks remain additional review work.
 
 **READY FOR REVIEW** for Issue #4's scope. Publication status and any PR URL are reported after actual Git/GitHub operations; this report does not assert a PR was created. No merge or Issue #4 closure is performed.
+
+
+## Release follow-up — 2026-10-20
+
+The complete frontend regression was rerun on implementation commit `4dfd4c5`: build PASS (1,957 modules), lint PASS (no lint errors/warnings), Vitest 122 passed / 0 failed / 0 skipped across 6 files, Playwright 32 passed / 0 failed / 0 skipped in 30.1s using system Chromium. All commands exited 0. No new application changes or defects were identified in this follow-up; only progress/publication documentation changed afterward.
+
+GitHub Issues #1–#3 are closed and PRs #27–#29 are actually merged. Issue #4 remains open, its branch is pushed, and public branch-filtered PR search returns no PR. A fresh `gh pr create` attempt failed with `Post "https://api.github.com/graphql": Forbidden`; merge/closure were not attempted without a PR. The next implementation (#5) depends on #4, and all later required issues depend on it transitively. The whole MVP is not release-ready. See [development progress](development-progress.md) for the exact recovery steps and [prepared PR body](issue-4-pr.md) for manual publication. Issue #4 remains **READY FOR REVIEW / INTEGRATION BLOCKED**, not completed.
