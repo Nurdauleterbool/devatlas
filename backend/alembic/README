@@ -1,0 +1,10 @@
+DevAtlas Alembic migration scripts.
+
+Run from the backend directory:
+
+    python -m alembic upgrade head
+    python -m alembic current
+    python -m alembic downgrade base
+
+Default sqlite:///./devatlas.db; override with DEVATLAS_DATABASE_URL.
+Initial revision 0001_initial_mvp defines the complete Issue #16 schema.
