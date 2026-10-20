@@ -1,6 +1,6 @@
 # DevAtlas
 
-DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend scaffold with mock data**: React, TypeScript, Vite, Tailwind CSS and React Router. FastAPI, SQLAlchemy/SQLite, authentication, quizzes and persistent personal progress are planned, not implemented.
+DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. FastAPI, SQLAlchemy/SQLite, authentication, quiz screens and persistent personal progress are planned, not implemented.
 
 ## Run locally
 
@@ -26,6 +26,8 @@ Open the address printed by Vite. To serve on a specific interface, use `npm run
 
 Unknown routes show a page-not-found screen. The desktop sidebar and mobile modal drawer link to all five routes. Navigation supports visible keyboard focus, a skip link, an active-route indicator, Escape dismissal and focus restoration. Career selection is temporary; skill progress is fixture data, not personal tracking.
 
+The replaceable `DevAtlasService` contract supplies users, careers, shared skills/dependencies, per-user progress/history, resources, practical tasks, quizzes/attempts, analytics and deterministic recommendations. The mock supports validated in-memory updates, quiz scoring and configurable loading/empty/error states. Fixtures include 10 unique skills shared across the three paths, with one five-question quiz per skill. See [mock service contract and scenarios](_docs/mock-service.md).
+
 Shared `Button`, `Card`, `Input` and `Dialog` components preserve the dark navy/indigo design. See [frontend setup and design conventions](frontend/README.md) for component usage and accessibility behavior.
 
 ## Verification
@@ -35,16 +37,17 @@ Run from `frontend`:
 ```sh
 npm run build
 npm run lint
+npm run test
 npx playwright install chromium
 npm run test:e2e
 ```
 
-For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of downloading a browser. Browser tests cover routes, mock states, component semantics and desktop/mobile keyboard interaction. They start a dedicated Vite server on port 4173. See [Issue #1 QA evidence and manual checklist](_docs/issue-1-qa.md).
+For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of downloading a browser. Vitest covers fixtures and service behavior; browser tests cover routes, actual mock scenarios, component semantics and desktop/mobile keyboard interaction. They start a dedicated Vite server on port 4173. See [Issue #2 QA evidence](_docs/issue-2-qa.md) and the earlier [Issue #1 QA checklist](_docs/issue-1-qa.md).
 
 ## Project workflow
 
 Read [AGENTS.md](AGENTS.md), [process.md](process.md), [_docs/plan.md](_docs/plan.md), [_docs/architecture.md](_docs/architecture.md), [_docs/issue-backlog.md](_docs/issue-backlog.md) and the relevant [role](roles/) before development. Work from an issue with testable acceptance criteria, use a separate branch/PR, and leave issue closure to QA.
 
-Required sequence: mock frontend → OpenAPI contract → in-memory FastAPI backend → SQLite via SQLAlchemy → frontend/backend integration → QA. React Flow, Vitest and Pytest are part of the planned stack but are not installed in this scaffold. Playwright is installed for browser regression checks.
+Required sequence: mock frontend → OpenAPI contract → in-memory FastAPI backend → SQLite via SQLAlchemy → frontend/backend integration → QA. Vitest and Playwright are installed for unit and browser tests. React Flow and Pytest remain part of the planned stack and are not installed yet.
 
 `chat-brainstorm.md` is a decision summary, **not the complete original transcript**. Export the original chat and add it separately before submission.

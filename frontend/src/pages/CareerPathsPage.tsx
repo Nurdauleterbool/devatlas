@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ArrowRight, CheckCircle2, Clock3, Circle } from 'lucide-react'
-import { mockService } from '../services/mockService'
-import type { CareerPath, SkillStatus } from '../services/mockService'
+import { service } from '../services'
+import type { SkillStatus } from '../types/domain'
+import { useCareerRoadmaps } from '../hooks/useCareerRoadmaps'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
@@ -24,34 +25,11 @@ function StatusIcon({ status }: { status: SkillStatus }) {
 }
 
 export default function CareerPathsPage() {
-  const [careers, setCareers] = useState<CareerPath[]>([])
+  const { careers, loading, error } = useCareerRoadmaps(service)
   const [activeId, setActiveId] = useState('frontend')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    let active = true
-
-    mockService.getCareerPaths()
-      .then((data) => {
-        if (!active) return
-        setCareers(data)
-        setActiveId((current) => data.some((item) => item.id === current) ? current : data[0]?.id ?? '')
-        setLoading(false)
-      })
-      .catch(() => {
-        if (!active) return
-        setError('Could not load career paths.')
-        setLoading(false)
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const career = careers.find((item) => item.id === activeId)
-  const completed = career?.skills.filter((skill) => skill.status === 'completed').length ?? 0
+  const career = careers.find((item) => item.id === activeId) ?? careers[0]
+  const completed = career?.skills.filter((skill) => skill.progress.status === 'completed').length ?? 0
   const total = career?.skills.length ?? 0
   const progress = total ? Math.round((completed / total) * 100) : 0
 
@@ -71,7 +49,7 @@ export default function CareerPathsPage() {
       </p>
 
       {loading && <p role="status" className="mt-8 text-slate-400">Loading career paths...</p>}
-      {error && <p role="alert" className="mt-8 text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-8 text-red-400">Could not load career paths.</p>}
 
       {!loading && !error && (
         <>
@@ -81,9 +59,9 @@ export default function CareerPathsPage() {
                 variant="ghost"
                 key={item.id}
                 onClick={() => setActiveId(item.id)}
-                aria-pressed={activeId === item.id}
+                aria-pressed={career?.id === item.id}
                 className={`flex-col items-start border text-left ${
-                  activeId === item.id
+                  career?.id === item.id
                     ? 'border-indigo-400 bg-indigo-500/15'
                     : 'border-white/10 bg-surface hover:border-indigo-400/50'
                 }`}
@@ -133,15 +111,15 @@ export default function CareerPathsPage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <h4 className="font-semibold">{skill.name}</h4>
-                      <span className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs ${statusColors[skill.status]}`}>
-                        <StatusIcon status={skill.status} />
-                        {statusLabels[skill.status]}
+                      <span className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs ${statusColors[skill.progress.status]}`}>
+                        <StatusIcon status={skill.progress.status} />
+                        {statusLabels[skill.progress.status]}
                       </span>
                     </div>
 
                     <p className="mt-4 text-sm text-slate-400">
                       {skill.prerequisites.length
-                        ? `Prerequisites: ${skill.prerequisites.join(', ')}`
+                        ? `Prerequisites: ${skill.prerequisites.map((item) => item.name).join(', ')}`
                         : 'No prerequisites — start here.'}
                     </p>
                   </Card>

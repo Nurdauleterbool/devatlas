@@ -1,5 +1,9 @@
 # Architecture — DevAtlas
 
+## Current frontend data boundary
+
+`frontend/src/types/domain.ts` defines shared domain models. `DevAtlasService` is the session-scoped asynchronous contract; `services/index.ts` selects the adapter. Dashboard and Career Paths use an adapter-independent roadmap composer and never import fixture data. The mock stores shared skills/dependencies separately from per-user progress and derives verification from quiz attempts. See [mock service contract, validation and scenarios](mock-service.md). This frontend contract does not implement or freeze the later OpenAPI/backend stage.
+
 ## Modules
 - React pages: Auth, Dashboard, Career Paths, Skill Graph, Skill Detail, Quiz, History/Profile.
 - Typed frontend service interface: `mockService` initially, `httpService` after integration.

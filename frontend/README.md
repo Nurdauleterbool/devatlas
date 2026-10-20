@@ -19,6 +19,8 @@ Vite prints its local address. `npm run dev -- --host 0.0.0.0` binds to all inte
 | `npm run build` | TypeScript project check and production assets in `dist/` |
 | `npm run lint` | Oxlint checks, including React hooks |
 | `npm run preview` | Serve the existing production build locally |
+| `npm run test` | Run Vitest unit tests for fixtures, service methods and configuration |
+| `npm run test:watch` | Watch and rerun unit tests during development |
 | `npm run test:e2e` | Chromium browser regression tests; starts Vite on port 4173 |
 
 Before the first browser test run, install Chromium with `npx playwright install chromium`. Alternatively, use an existing compatible browser:
@@ -36,11 +38,29 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/components/ui/`: shared Button, Card, Input and Dialog.
 - `src/pages/CareerPathsPage.tsx`: selectable career roadmaps and seeded progress.
 - `src/pages/PlaceholderPage.tsx`: Skill Graph, Learning, Analytics and missing-page screens.
-- `src/services/mockService.ts`: typed asynchronous career fixtures; each call returns a clone.
+- `src/types/domain.ts`: shared domain types, with catalogue skills separate from user progress.
+- `src/services/DevAtlasService.ts`: replaceable, Promise-returning, session-scoped service interface and typed errors.
+- `src/services/index.ts`: composition root binding the application to the current adapter.
+- `src/services/mockService.ts`: isolated in-memory adapter with validated progress, selections and quiz mutations.
+- `src/services/fixtures/`: deterministic catalogue, users, resources, tasks, quiz data and seeded history/attempts.
+- `src/services/careerRoadmaps.ts` and `src/hooks/useCareerRoadmaps.ts`: adapter-independent view composition used by Dashboard and Career Paths.
+- `src/services/__tests__/`: Vitest fixtures, contracts, mutation, analytics, recommendation and scenario tests.
 - `src/index.css`: Tailwind import, theme tokens, global keyboard focus, modal/drawer styles and reduced-motion support.
 - `e2e/`: route, mock-state and UI accessibility regression tests.
 
-Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`. The last three remain placeholders. Dashboard selection is local component state and resets when the page is remounted. Roadmap progress comes from fixture statuses and cannot be edited or persisted yet. Production hosts must fall back to `index.html` for these browser-history routes.
+Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`. The last three remain placeholders. Dashboard selection is local component state and resets when the page is remounted. The current pages read seeded user progress; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
+
+## Mock data and UI scenarios
+
+Pages import the typed `service` binding from `src/services/index.ts`; they do not read fixtures. A future HTTP adapter can replace that binding while implementing `DevAtlasService`. Shared skills have no status; roadmap views join their definitions/dependencies with `UserSkillProgress`.
+
+Development URLs can use `?mockScenario=empty`, `?mockScenario=error`, or `?mockLatencyMs=1500` to exercise empty, error or visible loading states. These overrides apply on full page load and are ignored in production. Defaults are success and zero added latency. Environment alternatives:
+
+```sh
+VITE_MOCK_SCENARIO=error VITE_MOCK_LATENCY_MS=1000 npm run dev
+```
+
+Accepted scenarios are `success`, `empty`, and `error`; loading uses finite latency. Empty retains the demo user and clears the catalogue/progress/attempts; unknown writes are rejected. Invalid settings are rejected rather than silently ignored. For programmatic per-method failures and clock/fixture injection, see the [mock service documentation](../_docs/mock-service.md).
 
 ## Design and accessibility conventions
 
@@ -81,4 +101,4 @@ Use links for navigation and buttons for actions. On mobile (below 768px), the d
 
 ## QA
 
-Run build, lint and browser tests before review. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #1 QA report](../_docs/issue-1-qa.md) records exact results and the remaining manual checklist.
+Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #2 QA report](../_docs/issue-2-qa.md) records current results; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.
