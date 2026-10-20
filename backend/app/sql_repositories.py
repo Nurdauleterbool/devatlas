@@ -138,6 +138,8 @@ class SQLAlchemyRepository(Repository[dict]):
                         id=question["id"], quiz_id=value["id"], prompt=question["prompt"],
                         explanation=grading["explanation"], position=pos,
                     ))
+                    # FK constraints require question rows before answer options.
+                    session.flush()
                     for option_pos, option in enumerate(question["options"]):
                         session.add(m.AnswerOption(
                             id=option["id"], question_id=question["id"], text=option["text"],
@@ -147,6 +149,8 @@ class SQLAlchemyRepository(Repository[dict]):
             if name == "quiz_attempts":
                 data = {snake(k): v for k, v in value.items() if k not in ("responses", "skillId")}
                 session.add(m.QuizAttempt(**data))
+                # Persist the parent attempt before response FK inserts.
+                session.flush()
                 for answer in value["responses"]:
                     session.add(m.QuizResponse(
                         attempt_id=value["id"],
