@@ -1,0 +1,1386 @@
+{
+  "quizzes": [
+    {
+      "id": "quiz-html",
+      "skillId": "html",
+      "title": "HTML knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "html-q1",
+          "prompt": "Which element represents the primary page content?",
+          "options": [
+            {
+              "id": "html-q1-o1",
+              "text": "<span>"
+            },
+            {
+              "id": "html-q1-o2",
+              "text": "<main>"
+            },
+            {
+              "id": "html-q1-o3",
+              "text": "<style>"
+            },
+            {
+              "id": "html-q1-o4",
+              "text": "<meta>"
+            }
+          ]
+        },
+        {
+          "id": "html-q2",
+          "prompt": "How is a visible label associated with an input?",
+          "options": [
+            {
+              "id": "html-q2-o1",
+              "text": "Matching CSS classes"
+            },
+            {
+              "id": "html-q2-o2",
+              "text": "A placeholder alone"
+            },
+            {
+              "id": "html-q2-o3",
+              "text": "A title on the form"
+            },
+            {
+              "id": "html-q2-o4",
+              "text": "Matching label for and input id"
+            }
+          ]
+        },
+        {
+          "id": "html-q3",
+          "prompt": "What should an informative image have?",
+          "options": [
+            {
+              "id": "html-q3-o1",
+              "text": "Meaningful alternative text"
+            },
+            {
+              "id": "html-q3-o2",
+              "text": "An empty file name"
+            },
+            {
+              "id": "html-q3-o3",
+              "text": "A nested heading"
+            },
+            {
+              "id": "html-q3-o4",
+              "text": "Only a background color"
+            }
+          ]
+        },
+        {
+          "id": "html-q4",
+          "prompt": "Which element provides native navigation to a URL?",
+          "options": [
+            {
+              "id": "html-q4-o1",
+              "text": "<div onclick=\"...\">"
+            },
+            {
+              "id": "html-q4-o2",
+              "text": "<b>"
+            },
+            {
+              "id": "html-q4-o3",
+              "text": "<a href=\"...\">"
+            },
+            {
+              "id": "html-q4-o4",
+              "text": "<section>"
+            }
+          ]
+        },
+        {
+          "id": "html-q5",
+          "prompt": "Which attribute marks a mandatory form field?",
+          "options": [
+            {
+              "id": "html-q5-o1",
+              "text": "mandatory"
+            },
+            {
+              "id": "html-q5-o2",
+              "text": "required"
+            },
+            {
+              "id": "html-q5-o3",
+              "text": "checked"
+            },
+            {
+              "id": "html-q5-o4",
+              "text": "selected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-css",
+      "skillId": "css",
+      "title": "CSS knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "css-q1",
+          "prompt": "Which layout system handles rows and columns?",
+          "options": [
+            {
+              "id": "css-q1-o1",
+              "text": "text-decoration"
+            },
+            {
+              "id": "css-q1-o2",
+              "text": "CSS Grid"
+            },
+            {
+              "id": "css-q1-o3",
+              "text": "z-index"
+            },
+            {
+              "id": "css-q1-o4",
+              "text": "font-style"
+            }
+          ]
+        },
+        {
+          "id": "css-q2",
+          "prompt": "What does box-sizing: border-box include in width?",
+          "options": [
+            {
+              "id": "css-q2-o1",
+              "text": "Only content"
+            },
+            {
+              "id": "css-q2-o2",
+              "text": "Only margin"
+            },
+            {
+              "id": "css-q2-o3",
+              "text": "Only border"
+            },
+            {
+              "id": "css-q2-o4",
+              "text": "Content, padding, and border"
+            }
+          ]
+        },
+        {
+          "id": "css-q3",
+          "prompt": "Which feature applies styles at different viewport widths?",
+          "options": [
+            {
+              "id": "css-q3-o1",
+              "text": "A media query"
+            },
+            {
+              "id": "css-q3-o2",
+              "text": "A comment"
+            },
+            {
+              "id": "css-q3-o3",
+              "text": "A custom font name"
+            },
+            {
+              "id": "css-q3-o4",
+              "text": "An HTML entity"
+            }
+          ]
+        },
+        {
+          "id": "css-q4",
+          "prompt": "Which selector helps show keyboard focus?",
+          "options": [
+            {
+              "id": "css-q4-o1",
+              "text": ":first-line"
+            },
+            {
+              "id": "css-q4-o2",
+              "text": "::marker"
+            },
+            {
+              "id": "css-q4-o3",
+              "text": ":focus-visible"
+            },
+            {
+              "id": "css-q4-o4",
+              "text": ":empty"
+            }
+          ]
+        },
+        {
+          "id": "css-q5",
+          "prompt": "How should reduced-motion preferences be detected?",
+          "options": [
+            {
+              "id": "css-q5-o1",
+              "text": "prefers-small-text"
+            },
+            {
+              "id": "css-q5-o2",
+              "text": "prefers-reduced-motion"
+            },
+            {
+              "id": "css-q5-o3",
+              "text": "animation: required"
+            },
+            {
+              "id": "css-q5-o4",
+              "text": "hover: disabled"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-javascript",
+      "skillId": "javascript",
+      "title": "JavaScript knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "javascript-q1",
+          "prompt": "What does an async function return?",
+          "options": [
+            {
+              "id": "javascript-q1-o1",
+              "text": "Always a string"
+            },
+            {
+              "id": "javascript-q1-o2",
+              "text": "A Promise"
+            },
+            {
+              "id": "javascript-q1-o3",
+              "text": "Only undefined"
+            },
+            {
+              "id": "javascript-q1-o4",
+              "text": "An HTML element"
+            }
+          ]
+        },
+        {
+          "id": "javascript-q2",
+          "prompt": "Which operation creates a new array of transformed values?",
+          "options": [
+            {
+              "id": "javascript-q2-o1",
+              "text": "push"
+            },
+            {
+              "id": "javascript-q2-o2",
+              "text": "pop"
+            },
+            {
+              "id": "javascript-q2-o3",
+              "text": "shift"
+            },
+            {
+              "id": "javascript-q2-o4",
+              "text": "map"
+            }
+          ]
+        },
+        {
+          "id": "javascript-q3",
+          "prompt": "Which equality operator avoids type coercion?",
+          "options": [
+            {
+              "id": "javascript-q3-o1",
+              "text": "==="
+            },
+            {
+              "id": "javascript-q3-o2",
+              "text": "=="
+            },
+            {
+              "id": "javascript-q3-o3",
+              "text": "="
+            },
+            {
+              "id": "javascript-q3-o4",
+              "text": "+="
+            }
+          ]
+        },
+        {
+          "id": "javascript-q4",
+          "prompt": "How can a rejected awaited Promise be handled?",
+          "options": [
+            {
+              "id": "javascript-q4-o1",
+              "text": "Only a CSS rule"
+            },
+            {
+              "id": "javascript-q4-o2",
+              "text": "A typeof check alone"
+            },
+            {
+              "id": "javascript-q4-o3",
+              "text": "try/catch"
+            },
+            {
+              "id": "javascript-q4-o4",
+              "text": "A const declaration"
+            }
+          ]
+        },
+        {
+          "id": "javascript-q5",
+          "prompt": "Which declaration is block scoped and can be reassigned?",
+          "options": [
+            {
+              "id": "javascript-q5-o1",
+              "text": "const"
+            },
+            {
+              "id": "javascript-q5-o2",
+              "text": "let"
+            },
+            {
+              "id": "javascript-q5-o3",
+              "text": "import"
+            },
+            {
+              "id": "javascript-q5-o4",
+              "text": "export"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-react",
+      "skillId": "react",
+      "title": "React knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "react-q1",
+          "prompt": "What should identify a rendered list item?",
+          "options": [
+            {
+              "id": "react-q1-o1",
+              "text": "A new random number on each render"
+            },
+            {
+              "id": "react-q1-o2",
+              "text": "A stable key from the data"
+            },
+            {
+              "id": "react-q1-o3",
+              "text": "Its text color"
+            },
+            {
+              "id": "react-q1-o4",
+              "text": "The browser window width"
+            }
+          ]
+        },
+        {
+          "id": "react-q2",
+          "prompt": "How should component state be updated?",
+          "options": [
+            {
+              "id": "react-q2-o1",
+              "text": "By mutating props"
+            },
+            {
+              "id": "react-q2-o2",
+              "text": "By changing a local variable only"
+            },
+            {
+              "id": "react-q2-o3",
+              "text": "By editing a DOM attribute directly"
+            },
+            {
+              "id": "react-q2-o4",
+              "text": "Through its state setter"
+            }
+          ]
+        },
+        {
+          "id": "react-q3",
+          "prompt": "What are props?",
+          "options": [
+            {
+              "id": "react-q3-o1",
+              "text": "Inputs passed to a component"
+            },
+            {
+              "id": "react-q3-o2",
+              "text": "Only CSS properties"
+            },
+            {
+              "id": "react-q3-o3",
+              "text": "Global mutable variables"
+            },
+            {
+              "id": "react-q3-o4",
+              "text": "Database indexes"
+            }
+          ]
+        },
+        {
+          "id": "react-q4",
+          "prompt": "Where must Hooks normally be called?",
+          "options": [
+            {
+              "id": "react-q4-o1",
+              "text": "Inside arbitrary loops"
+            },
+            {
+              "id": "react-q4-o2",
+              "text": "Only in event callbacks"
+            },
+            {
+              "id": "react-q4-o3",
+              "text": "At the top level of components or custom Hooks"
+            },
+            {
+              "id": "react-q4-o4",
+              "text": "Inside every conditional branch"
+            }
+          ]
+        },
+        {
+          "id": "react-q5",
+          "prompt": "What does an Effect cleanup function do?",
+          "options": [
+            {
+              "id": "react-q5-o1",
+              "text": "Deletes the component source file"
+            },
+            {
+              "id": "react-q5-o2",
+              "text": "Releases resources when an Effect is replaced or unmounted"
+            },
+            {
+              "id": "react-q5-o3",
+              "text": "Makes props mutable"
+            },
+            {
+              "id": "react-q5-o4",
+              "text": "Prevents every render"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-python",
+      "skillId": "python",
+      "title": "Python knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "python-q1",
+          "prompt": "Which collection maps keys to values?",
+          "options": [
+            {
+              "id": "python-q1-o1",
+              "text": "list"
+            },
+            {
+              "id": "python-q1-o2",
+              "text": "dict"
+            },
+            {
+              "id": "python-q1-o3",
+              "text": "tuple"
+            },
+            {
+              "id": "python-q1-o4",
+              "text": "range"
+            }
+          ]
+        },
+        {
+          "id": "python-q2",
+          "prompt": "What defines a function?",
+          "options": [
+            {
+              "id": "python-q2-o1",
+              "text": "class"
+            },
+            {
+              "id": "python-q2-o2",
+              "text": "import"
+            },
+            {
+              "id": "python-q2-o3",
+              "text": "with"
+            },
+            {
+              "id": "python-q2-o4",
+              "text": "def"
+            }
+          ]
+        },
+        {
+          "id": "python-q3",
+          "prompt": "Which structure is immutable?",
+          "options": [
+            {
+              "id": "python-q3-o1",
+              "text": "tuple"
+            },
+            {
+              "id": "python-q3-o2",
+              "text": "list"
+            },
+            {
+              "id": "python-q3-o3",
+              "text": "dict"
+            },
+            {
+              "id": "python-q3-o4",
+              "text": "set"
+            }
+          ]
+        },
+        {
+          "id": "python-q4",
+          "prompt": "How is a specific exception handled?",
+          "options": [
+            {
+              "id": "python-q4-o1",
+              "text": "finally ExceptionType"
+            },
+            {
+              "id": "python-q4-o2",
+              "text": "return ExceptionType"
+            },
+            {
+              "id": "python-q4-o3",
+              "text": "except ExceptionType"
+            },
+            {
+              "id": "python-q4-o4",
+              "text": "import ExceptionType"
+            }
+          ]
+        },
+        {
+          "id": "python-q5",
+          "prompt": "What does len([2, 4, 6]) return?",
+          "options": [
+            {
+              "id": "python-q5-o1",
+              "text": "6"
+            },
+            {
+              "id": "python-q5-o2",
+              "text": "3"
+            },
+            {
+              "id": "python-q5-o3",
+              "text": "12"
+            },
+            {
+              "id": "python-q5-o4",
+              "text": "2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-sql",
+      "skillId": "sql",
+      "title": "SQL knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "sql-q1",
+          "prompt": "Which clause filters rows before grouping?",
+          "options": [
+            {
+              "id": "sql-q1-o1",
+              "text": "ORDER BY"
+            },
+            {
+              "id": "sql-q1-o2",
+              "text": "WHERE"
+            },
+            {
+              "id": "sql-q1-o3",
+              "text": "HAVING"
+            },
+            {
+              "id": "sql-q1-o4",
+              "text": "LIMIT"
+            }
+          ]
+        },
+        {
+          "id": "sql-q2",
+          "prompt": "Which join returns matching rows from both tables?",
+          "options": [
+            {
+              "id": "sql-q2-o1",
+              "text": "CROSS JOIN"
+            },
+            {
+              "id": "sql-q2-o2",
+              "text": "FULL OUTER JOIN"
+            },
+            {
+              "id": "sql-q2-o3",
+              "text": "UNION"
+            },
+            {
+              "id": "sql-q2-o4",
+              "text": "INNER JOIN"
+            }
+          ]
+        },
+        {
+          "id": "sql-q3",
+          "prompt": "Which aggregate counts rows?",
+          "options": [
+            {
+              "id": "sql-q3-o1",
+              "text": "COUNT(*)"
+            },
+            {
+              "id": "sql-q3-o2",
+              "text": "SUM(*)"
+            },
+            {
+              "id": "sql-q3-o3",
+              "text": "SORT(*)"
+            },
+            {
+              "id": "sql-q3-o4",
+              "text": "GROUP(*)"
+            }
+          ]
+        },
+        {
+          "id": "sql-q4",
+          "prompt": "How do you test for a missing SQL value?",
+          "options": [
+            {
+              "id": "sql-q4-o1",
+              "text": "= NULL"
+            },
+            {
+              "id": "sql-q4-o2",
+              "text": "== NULL"
+            },
+            {
+              "id": "sql-q4-o3",
+              "text": "IS NULL"
+            },
+            {
+              "id": "sql-q4-o4",
+              "text": "LIKE NULL"
+            }
+          ]
+        },
+        {
+          "id": "sql-q5",
+          "prompt": "Which clause filters aggregate groups?",
+          "options": [
+            {
+              "id": "sql-q5-o1",
+              "text": "WHERE"
+            },
+            {
+              "id": "sql-q5-o2",
+              "text": "HAVING"
+            },
+            {
+              "id": "sql-q5-o3",
+              "text": "FROM"
+            },
+            {
+              "id": "sql-q5-o4",
+              "text": "OFFSET"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-fastapi",
+      "skillId": "fastapi",
+      "title": "FastAPI knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "fastapi-q1",
+          "prompt": "What describes the expected shape of request data?",
+          "options": [
+            {
+              "id": "fastapi-q1-o1",
+              "text": "A CSS selector"
+            },
+            {
+              "id": "fastapi-q1-o2",
+              "text": "A typed validation model"
+            },
+            {
+              "id": "fastapi-q1-o3",
+              "text": "A PNG image"
+            },
+            {
+              "id": "fastapi-q1-o4",
+              "text": "An HTML comment"
+            }
+          ]
+        },
+        {
+          "id": "fastapi-q2",
+          "prompt": "Which HTTP method is normally used to retrieve a resource?",
+          "options": [
+            {
+              "id": "fastapi-q2-o1",
+              "text": "DELETE"
+            },
+            {
+              "id": "fastapi-q2-o2",
+              "text": "PATCH"
+            },
+            {
+              "id": "fastapi-q2-o3",
+              "text": "POST"
+            },
+            {
+              "id": "fastapi-q2-o4",
+              "text": "GET"
+            }
+          ]
+        },
+        {
+          "id": "fastapi-q3",
+          "prompt": "Which status code represents a missing resource?",
+          "options": [
+            {
+              "id": "fastapi-q3-o1",
+              "text": "404"
+            },
+            {
+              "id": "fastapi-q3-o2",
+              "text": "200"
+            },
+            {
+              "id": "fastapi-q3-o3",
+              "text": "201"
+            },
+            {
+              "id": "fastapi-q3-o4",
+              "text": "204"
+            }
+          ]
+        },
+        {
+          "id": "fastapi-q4",
+          "prompt": "What does dependency injection help manage?",
+          "options": [
+            {
+              "id": "fastapi-q4-o1",
+              "text": "CSS animation frames"
+            },
+            {
+              "id": "fastapi-q4-o2",
+              "text": "Only file names"
+            },
+            {
+              "id": "fastapi-q4-o3",
+              "text": "Reusable request dependencies"
+            },
+            {
+              "id": "fastapi-q4-o4",
+              "text": "Browser font rendering"
+            }
+          ]
+        },
+        {
+          "id": "fastapi-q5",
+          "prompt": "Why use a response model?",
+          "options": [
+            {
+              "id": "fastapi-q5-o1",
+              "text": "To skip all request validation"
+            },
+            {
+              "id": "fastapi-q5-o2",
+              "text": "To define and filter the returned data shape"
+            },
+            {
+              "id": "fastapi-q5-o3",
+              "text": "To store passwords in plain text"
+            },
+            {
+              "id": "fastapi-q5-o4",
+              "text": "To disable HTTP status codes"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-databases",
+      "skillId": "databases",
+      "title": "Databases knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "databases-q1",
+          "prompt": "What uniquely identifies a row?",
+          "options": [
+            {
+              "id": "databases-q1-o1",
+              "text": "Any nullable column"
+            },
+            {
+              "id": "databases-q1-o2",
+              "text": "A primary key"
+            },
+            {
+              "id": "databases-q1-o3",
+              "text": "A table caption"
+            },
+            {
+              "id": "databases-q1-o4",
+              "text": "A duplicate display name"
+            }
+          ]
+        },
+        {
+          "id": "databases-q2",
+          "prompt": "What enforces a reference to another table?",
+          "options": [
+            {
+              "id": "databases-q2-o1",
+              "text": "A CSS class"
+            },
+            {
+              "id": "databases-q2-o2",
+              "text": "A comment"
+            },
+            {
+              "id": "databases-q2-o3",
+              "text": "A column alias"
+            },
+            {
+              "id": "databases-q2-o4",
+              "text": "A foreign key"
+            }
+          ]
+        },
+        {
+          "id": "databases-q3",
+          "prompt": "What groups changes into an atomic unit?",
+          "options": [
+            {
+              "id": "databases-q3-o1",
+              "text": "A transaction"
+            },
+            {
+              "id": "databases-q3-o2",
+              "text": "A view name"
+            },
+            {
+              "id": "databases-q3-o3",
+              "text": "A sort order"
+            },
+            {
+              "id": "databases-q3-o4",
+              "text": "A column label"
+            }
+          ]
+        },
+        {
+          "id": "databases-q4",
+          "prompt": "What can improve lookup speed at a write/storage cost?",
+          "options": [
+            {
+              "id": "databases-q4-o1",
+              "text": "A longer table name"
+            },
+            {
+              "id": "databases-q4-o2",
+              "text": "Removing all keys"
+            },
+            {
+              "id": "databases-q4-o3",
+              "text": "An index"
+            },
+            {
+              "id": "databases-q4-o4",
+              "text": "Duplicating every row"
+            }
+          ]
+        },
+        {
+          "id": "databases-q5",
+          "prompt": "What is one goal of normalization?",
+          "options": [
+            {
+              "id": "databases-q5-o1",
+              "text": "Store every value in one text field"
+            },
+            {
+              "id": "databases-q5-o2",
+              "text": "Reduce redundant data and update anomalies"
+            },
+            {
+              "id": "databases-q5-o3",
+              "text": "Eliminate every relationship"
+            },
+            {
+              "id": "databases-q5-o4",
+              "text": "Prevent all SELECT queries"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-pandas",
+      "skillId": "pandas",
+      "title": "Pandas knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "pandas-q1",
+          "prompt": "Which object represents a two-dimensional table?",
+          "options": [
+            {
+              "id": "pandas-q1-o1",
+              "text": "Series only"
+            },
+            {
+              "id": "pandas-q1-o2",
+              "text": "DataFrame"
+            },
+            {
+              "id": "pandas-q1-o3",
+              "text": "A scalar"
+            },
+            {
+              "id": "pandas-q1-o4",
+              "text": "A Python exception"
+            }
+          ]
+        },
+        {
+          "id": "pandas-q2",
+          "prompt": "Which function loads CSV data?",
+          "options": [
+            {
+              "id": "pandas-q2-o1",
+              "text": "to_json"
+            },
+            {
+              "id": "pandas-q2-o2",
+              "text": "sort_values"
+            },
+            {
+              "id": "pandas-q2-o3",
+              "text": "dropna"
+            },
+            {
+              "id": "pandas-q2-o4",
+              "text": "read_csv"
+            }
+          ]
+        },
+        {
+          "id": "pandas-q3",
+          "prompt": "Which method detects missing values?",
+          "options": [
+            {
+              "id": "pandas-q3-o1",
+              "text": "isna"
+            },
+            {
+              "id": "pandas-q3-o2",
+              "text": "astype"
+            },
+            {
+              "id": "pandas-q3-o3",
+              "text": "merge"
+            },
+            {
+              "id": "pandas-q3-o4",
+              "text": "rename"
+            }
+          ]
+        },
+        {
+          "id": "pandas-q4",
+          "prompt": "Which operation groups rows for aggregation?",
+          "options": [
+            {
+              "id": "pandas-q4-o1",
+              "text": "head"
+            },
+            {
+              "id": "pandas-q4-o2",
+              "text": "tail"
+            },
+            {
+              "id": "pandas-q4-o3",
+              "text": "groupby"
+            },
+            {
+              "id": "pandas-q4-o4",
+              "text": "reset_index"
+            }
+          ]
+        },
+        {
+          "id": "pandas-q5",
+          "prompt": "Which method joins tables by matching keys?",
+          "options": [
+            {
+              "id": "pandas-q5-o1",
+              "text": "describe"
+            },
+            {
+              "id": "pandas-q5-o2",
+              "text": "merge"
+            },
+            {
+              "id": "pandas-q5-o3",
+              "text": "fillna"
+            },
+            {
+              "id": "pandas-q5-o4",
+              "text": "drop_duplicates"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quiz-statistics",
+      "skillId": "statistics",
+      "title": "Statistics knowledge check",
+      "passThreshold": 80,
+      "questions": [
+        {
+          "id": "statistics-q1",
+          "prompt": "Which summary is less affected by an extreme outlier?",
+          "options": [
+            {
+              "id": "statistics-q1-o1",
+              "text": "Arithmetic mean"
+            },
+            {
+              "id": "statistics-q1-o2",
+              "text": "Median"
+            },
+            {
+              "id": "statistics-q1-o3",
+              "text": "Maximum"
+            },
+            {
+              "id": "statistics-q1-o4",
+              "text": "Range"
+            }
+          ]
+        },
+        {
+          "id": "statistics-q2",
+          "prompt": "What does standard deviation measure?",
+          "options": [
+            {
+              "id": "statistics-q2-o1",
+              "text": "Only the sample size"
+            },
+            {
+              "id": "statistics-q2-o2",
+              "text": "A variable name"
+            },
+            {
+              "id": "statistics-q2-o3",
+              "text": "The most common label"
+            },
+            {
+              "id": "statistics-q2-o4",
+              "text": "Spread around the mean"
+            }
+          ]
+        },
+        {
+          "id": "statistics-q3",
+          "prompt": "Does correlation alone establish causation?",
+          "options": [
+            {
+              "id": "statistics-q3-o1",
+              "text": "No"
+            },
+            {
+              "id": "statistics-q3-o2",
+              "text": "Always"
+            },
+            {
+              "id": "statistics-q3-o3",
+              "text": "Only when it is positive"
+            },
+            {
+              "id": "statistics-q3-o4",
+              "text": "Only when it is negative"
+            }
+          ]
+        },
+        {
+          "id": "statistics-q4",
+          "prompt": "What is a sample?",
+          "options": [
+            {
+              "id": "statistics-q4-o1",
+              "text": "Every possible population"
+            },
+            {
+              "id": "statistics-q4-o2",
+              "text": "Only the largest observation"
+            },
+            {
+              "id": "statistics-q4-o3",
+              "text": "A subset of a population"
+            },
+            {
+              "id": "statistics-q4-o4",
+              "text": "A guaranteed causal effect"
+            }
+          ]
+        },
+        {
+          "id": "statistics-q5",
+          "prompt": "What is the mean of 2, 4, and 6?",
+          "options": [
+            {
+              "id": "statistics-q5-o1",
+              "text": "2"
+            },
+            {
+              "id": "statistics-q5-o2",
+              "text": "4"
+            },
+            {
+              "id": "statistics-q5-o3",
+              "text": "6"
+            },
+            {
+              "id": "statistics-q5-o4",
+              "text": "12"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "answerKeys": {
+    "html-q1": {
+      "correctOptionId": "html-q1-o2",
+      "explanation": "The main element identifies the dominant content of the document."
+    },
+    "html-q2": {
+      "correctOptionId": "html-q2-o4",
+      "explanation": "A label uses for to reference the input id."
+    },
+    "html-q3": {
+      "correctOptionId": "html-q3-o1",
+      "explanation": "Alternative text communicates the meaning when the image cannot be seen."
+    },
+    "html-q4": {
+      "correctOptionId": "html-q4-o3",
+      "explanation": "An anchor with href provides native link semantics and keyboard behavior."
+    },
+    "html-q5": {
+      "correctOptionId": "html-q5-o2",
+      "explanation": "The required attribute enables native required-field validation."
+    },
+    "css-q1": {
+      "correctOptionId": "css-q1-o2",
+      "explanation": "Grid is a two-dimensional layout system."
+    },
+    "css-q2": {
+      "correctOptionId": "css-q2-o4",
+      "explanation": "Border-box includes content, padding, and border, but not margin."
+    },
+    "css-q3": {
+      "correctOptionId": "css-q3-o1",
+      "explanation": "Media queries conditionally apply styles, including viewport-width conditions."
+    },
+    "css-q4": {
+      "correctOptionId": "css-q4-o3",
+      "explanation": "Focus-visible indicates when the browser determines focus should be visibly shown."
+    },
+    "css-q5": {
+      "correctOptionId": "css-q5-o2",
+      "explanation": "The prefers-reduced-motion media feature exposes the user preference."
+    },
+    "javascript-q1": {
+      "correctOptionId": "javascript-q1-o2",
+      "explanation": "Async functions return Promises, including when returning a plain value."
+    },
+    "javascript-q2": {
+      "correctOptionId": "javascript-q2-o4",
+      "explanation": "Map produces a new array by applying a callback to each element."
+    },
+    "javascript-q3": {
+      "correctOptionId": "javascript-q3-o1",
+      "explanation": "Strict equality compares without converting operand types."
+    },
+    "javascript-q4": {
+      "correctOptionId": "javascript-q4-o3",
+      "explanation": "An awaited rejection throws and can be handled with try/catch."
+    },
+    "javascript-q5": {
+      "correctOptionId": "javascript-q5-o2",
+      "explanation": "Let declares a block-scoped binding that can be reassigned."
+    },
+    "react-q1": {
+      "correctOptionId": "react-q1-o2",
+      "explanation": "Stable keys let React match items across renders."
+    },
+    "react-q2": {
+      "correctOptionId": "react-q2-o4",
+      "explanation": "State setters schedule renders with the new state."
+    },
+    "react-q3": {
+      "correctOptionId": "react-q3-o1",
+      "explanation": "Props carry data and callbacks from the parent to a component."
+    },
+    "react-q4": {
+      "correctOptionId": "react-q4-o3",
+      "explanation": "Top-level Hook calls preserve their ordering across renders."
+    },
+    "react-q5": {
+      "correctOptionId": "react-q5-o2",
+      "explanation": "Cleanup removes subscriptions and other resources created by an Effect."
+    },
+    "python-q1": {
+      "correctOptionId": "python-q1-o2",
+      "explanation": "A dictionary stores key-value associations."
+    },
+    "python-q2": {
+      "correctOptionId": "python-q2-o4",
+      "explanation": "The def statement defines a function."
+    },
+    "python-q3": {
+      "correctOptionId": "python-q3-o1",
+      "explanation": "A tuple cannot have its entries reassigned after creation."
+    },
+    "python-q4": {
+      "correctOptionId": "python-q4-o3",
+      "explanation": "An except clause handles matching exceptions from a try block."
+    },
+    "python-q5": {
+      "correctOptionId": "python-q5-o2",
+      "explanation": "Len returns the number of elements."
+    },
+    "sql-q1": {
+      "correctOptionId": "sql-q1-o2",
+      "explanation": "Where filters rows before aggregate grouping."
+    },
+    "sql-q2": {
+      "correctOptionId": "sql-q2-o4",
+      "explanation": "An inner join keeps rows for which the join condition matches."
+    },
+    "sql-q3": {
+      "correctOptionId": "sql-q3-o1",
+      "explanation": "Count star counts rows, including rows containing null column values."
+    },
+    "sql-q4": {
+      "correctOptionId": "sql-q4-o3",
+      "explanation": "Null comparisons use IS NULL rather than ordinary equality."
+    },
+    "sql-q5": {
+      "correctOptionId": "sql-q5-o2",
+      "explanation": "Having filters groups after aggregation."
+    },
+    "fastapi-q1": {
+      "correctOptionId": "fastapi-q1-o2",
+      "explanation": "Typed validation models describe and validate request data."
+    },
+    "fastapi-q2": {
+      "correctOptionId": "fastapi-q2-o4",
+      "explanation": "Get requests retrieve a resource without intending to mutate it."
+    },
+    "fastapi-q3": {
+      "correctOptionId": "fastapi-q3-o1",
+      "explanation": "404 Not Found indicates that the requested resource was not found."
+    },
+    "fastapi-q4": {
+      "correctOptionId": "fastapi-q4-o3",
+      "explanation": "Dependencies can provide common request resources and checks."
+    },
+    "fastapi-q5": {
+      "correctOptionId": "fastapi-q5-o2",
+      "explanation": "A response model documents and constrains the response data."
+    },
+    "databases-q1": {
+      "correctOptionId": "databases-q1-o2",
+      "explanation": "A primary key uniquely identifies each row."
+    },
+    "databases-q2": {
+      "correctOptionId": "databases-q2-o4",
+      "explanation": "Foreign keys constrain references to valid related rows."
+    },
+    "databases-q3": {
+      "correctOptionId": "databases-q3-o1",
+      "explanation": "Transactions allow related changes to commit together or roll back."
+    },
+    "databases-q4": {
+      "correctOptionId": "databases-q4-o3",
+      "explanation": "Indexes accelerate suitable lookups but require maintenance and storage."
+    },
+    "databases-q5": {
+      "correctOptionId": "databases-q5-o2",
+      "explanation": "Normalization organizes related data to reduce duplication and anomalies."
+    },
+    "pandas-q1": {
+      "correctOptionId": "pandas-q1-o2",
+      "explanation": "A DataFrame contains rows and labelled columns."
+    },
+    "pandas-q2": {
+      "correctOptionId": "pandas-q2-o4",
+      "explanation": "Read_csv parses a CSV file into a DataFrame."
+    },
+    "pandas-q3": {
+      "correctOptionId": "pandas-q3-o1",
+      "explanation": "Isna identifies missing values."
+    },
+    "pandas-q4": {
+      "correctOptionId": "pandas-q4-o3",
+      "explanation": "Groupby splits rows into groups for aggregation and related operations."
+    },
+    "pandas-q5": {
+      "correctOptionId": "pandas-q5-o2",
+      "explanation": "Merge combines tables using common keys or indexes."
+    },
+    "statistics-q1": {
+      "correctOptionId": "statistics-q1-o2",
+      "explanation": "The median depends on order rather than the magnitude of extreme observations."
+    },
+    "statistics-q2": {
+      "correctOptionId": "statistics-q2-o4",
+      "explanation": "Standard deviation measures dispersion in the original units."
+    },
+    "statistics-q3": {
+      "correctOptionId": "statistics-q3-o1",
+      "explanation": "Association alone does not rule out confounding or reverse causation."
+    },
+    "statistics-q4": {
+      "correctOptionId": "statistics-q4-o3",
+      "explanation": "A sample is a subset used to learn about a population."
+    },
+    "statistics-q5": {
+      "correctOptionId": "statistics-q5-o2",
+      "explanation": "The mean is the sum, 12, divided by the count, 3."
+    }
+  }
+}
