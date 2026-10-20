@@ -10,6 +10,8 @@ Issue #6 shares resource/actionable skill details between the graph modal and st
 
 Issue #7 adds service-graded quiz taking/results, owned attempt metadata, best-score retention and safe refresh retries. Public quiz whitelisting is shared with skill details; scoring and correct answers remain behind the service response boundary. The mock is not a production anti-cheating boundary. See [quiz QA](issue-7-qa.md).
 
+Issue #8 adds authenticated analytics composition and chronological learning/quiz tables. Completion history replays recorded status transitions against current unique-skill progress, preserving same-time event order and existing completions; chart points use only observed timestamps. A named SVG and visible data table expose the same values. Account keys and shared-workspace invalidation prevent stale snapshots after background mutations. See [analytics QA](issue-8-qa.md).
+
 ## Modules
 - React pages: Auth, Dashboard, Career Paths, Skill Graph, Skill Detail, Quiz, History/Profile.
 - Typed frontend service interface: `mockService` initially, `httpService` after integration.
