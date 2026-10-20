@@ -32,7 +32,7 @@ export interface DevAtlasService {
 }
 
 export type ServiceErrorCode = 'VALIDATION' | 'NOT_FOUND' | 'UNAVAILABLE' |
-  'INVALID_CREDENTIALS' | 'EMAIL_IN_USE' | 'UNAUTHENTICATED' | 'SESSION_CHANGED'
+  'INVALID_CREDENTIALS' | 'EMAIL_IN_USE' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SESSION_CHANGED'
 
 export class ServiceError extends Error {
   readonly code: ServiceErrorCode
