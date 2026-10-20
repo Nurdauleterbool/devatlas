@@ -1,9 +1,8 @@
 # DevAtlas FastAPI backend
 
-In-memory API, Python 3.12+.
+Python 3.12+; install and run from `backend/`:
 
 ```bash
-cd backend
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e '.[test]'
@@ -11,15 +10,18 @@ uvicorn app.main:app --reload
 python -m pytest -q
 ```
 
-Versioned API prefix: `/api/v1`.
+All URLs use `/api/v1`.
 
-- Health: `GET /health`
-- Authentication: `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me`
-- Public catalogue: `/career-paths`, `/skills`, `/dependencies`, skill resources and practice tasks
-- Public/signed-in progress: `GET /progress`. Anonymous response contains synthetic `preview` rows with `not_started` state, not another user's data.
-- Signed-in status update: `PUT /me/progress/{skillId}` with `{"status":"learning"}`, allowed statuses: `not_started`, `learning`, `completed`.
-- Signed-in history: `GET /me/progress/history`.
+- `GET /health` — readiness
+- `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me` — session and account access
+- `GET /career-paths`, `GET /skills`, `GET /dependencies`, skill resources and practice — public catalogue
+- `GET /progress` — signed-in progress or synthetic anonymous preview
+- `PUT /me/progress/{skillId}` with `{"status":"learning"}` — authenticated owner-only mutation
+- `GET /me/progress/history` — chronological signed-in history
+- `GET /skills/{skillId}/quiz` — public multiple-choice quiz without answer keys
+- `POST /quizzes/{quizId}/attempts` with `{"responses":[{"questionId":"html-q1","optionId":"html-q1-o2"}, ...]}` — authenticated grading and retained attempt; no client score or user ID
+- `GET /me/quiz-attempts` (optional `quizId`) — signed-in owner's attempts only
 
-Progress mutations require a valid session cookie; ownership is derived server-side. Changes append an immutable event; repeated identical statuses do not. Quiz verification and best scores are independently derived from stored attempts (quiz endpoints arrive in #14). Both history and progress are kept in memory and reset when the application restarts.
+Quizzes are seeded from `app/quiz_data.json` and graded on the server. Correct IDs and explanations are returned only **after** successful submission. Five questions per skill; 80% passes (4/5). Unlimited retakes preserve best score and independent verification. See `_docs/api-contract.md` and `_docs/issue-14-qa.md`.
 
-Configuration: `DEVATLAS_FRONTEND_ORIGIN`, `DEVATLAS_ENVIRONMENT`. Cookies are HttpOnly, SameSite=Lax, and Secure in production. Current in-memory repositories are single-process only; SQL transactions and persistence are deferred to #16–#18. Frontend continues using mockService until #19.
+`DEVATLAS_FRONTEND_ORIGIN` controls accepted CORS/browser mutation origin; `DEVATLAS_ENVIRONMENT=production` enables Secure cookies. Auth, progress and quiz attempts are in-memory until SQLite Issues #16–#18. Frontend switches from mock to HTTP in #19. Avoid multiworker or public production deployment at this stage.
