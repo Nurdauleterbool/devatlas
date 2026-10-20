@@ -4,7 +4,7 @@ import { mockOptionsFromConfig } from './mockConfig'
 import { createHttpService } from './httpService'
 
 /** Live HTTP is the runtime default; isolated tests may opt in to mock. */
-export const isLive = import.meta.env.VITE_SERVICE_MODE !== 'mock'
+import { isLive } from './serviceMode'
 export const service: DevAtlasService = isLive
   ? createHttpService()
   : createMockService({
