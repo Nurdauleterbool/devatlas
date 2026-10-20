@@ -25,6 +25,8 @@ Seventeen new model tests cover populated/empty data, chronological ties, decrea
 
 Seven new browser cases cover anonymous restrictions, the seeded four-event completion series, summary/history reconciliation after status and quiz writes, a pending save completed after leaving details, empty new-account isolation, failed reads/retry and 320/375/768/1280px layouts. The first targeted run passed six cases; one harness selector incorrectly assumed an exact navigation label and timed out. It now uses the existing Learning navigation link; no product change or disabled assertion was needed.
 
+Independent Chromium visual/keyboard review inspected populated analytics at 1440px and 320px. No document overflow or runtime error occurred; cards/headings wrap, dates and exact-data tables remain readable. Route focus and visible focus outlines work. All 12 tested Tab steps remained inside the mobile drawer, Escape restored its opener, and ArrowRight scrolled a focused history table to reach offscreen columns. SVG axis labels scale small at 320px; the visible exact-value table provides a readable alternative. Screenshots were inspected during review under /tmp/devatlas-analytics-{desktop1440,mobile320,mobile-menu320,mobile-table320}.png (temporary local evidence, not repository assets). Independent review approved integration.
+
 ## Files and limits
 
 AnalyticsPage.tsx implements the lazy route wired in App.tsx. analyticsView.ts composes/validates account-owned snapshots and reconstructs real-event completion history. analyticsView.test.ts and analytics.spec.ts add coverage. README, frontend/README, architecture and development-progress describe current behavior.
