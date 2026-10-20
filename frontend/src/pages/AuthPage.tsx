@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/authContext'
 import { ServiceError } from '../services/DevAtlasService'
+import { isLive } from '../services'
 import { MAX_DISPLAY_NAME_LENGTH, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, validateAuth } from '../services/authValidation'
 import type { AuthErrors, AuthField } from '../services/authValidation'
 import Button from '../components/ui/Button'
@@ -66,7 +67,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         ? 'Email or password is incorrect. Please try again.'
         : reason instanceof ServiceError && reason.code === 'EMAIL_IN_USE'
           ? 'An account already uses this email. Try logging in.'
-          : 'Mock authentication is unavailable. Please try again.'
+          : isLive ? 'Authentication is unavailable. Check the server and try again.' : 'Mock authentication is unavailable. Please try again.'
       setError(message)
       requestAnimationFrame(() => errorRef.current?.focus())
     } finally {
@@ -86,12 +87,12 @@ export default function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
       <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-400">Your learning journey</p>
       <Card aria-labelledby="auth-title">
         <h1 id="auth-title" className="text-3xl font-bold">{auth.session ? 'You’re signed in' : signup ? 'Create your account' : 'Welcome back'}</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-400">Mock authentication for this prototype. Accounts and sessions reset on reload. Use a test password you do not use elsewhere.</p>
+        <p className="mt-3 text-sm leading-6 text-slate-400">{isLive ? 'Your account and progress are securely saved on the server.' : 'Mock authentication for this prototype. Accounts and sessions reset on reload. Use a test password you do not use elsewhere.'}</p>
 
         {auth.session ? (
           <>
             <p ref={successRef} tabIndex={-1} role="status" className="mt-6 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-emerald-200">
-              {success && signup ? 'Mock account created. ' : ''}Signed in as {auth.session.user.displayName}.
+              {success && signup ? isLive ? 'Account created. ' : 'Mock account created. ' : ''}Signed in as {auth.session.user.displayName}.
             </p>
             <Link to="/" className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 py-3 font-semibold hover:bg-indigo-700">Continue to Dashboard</Link>
           </>
@@ -106,12 +107,12 @@ export default function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
                 <Input label="Email" name="email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} value={email} error={errors.email} ref={(element) => { fields.current.email = element }} onChange={(event) => { setEmail(event.target.value); clearError('email') }} />
                 <Input label="Password" name="password" type="password" autoComplete={signup ? 'new-password' : 'current-password'} required minLength={MIN_PASSWORD_LENGTH} maxLength={MAX_PASSWORD_LENGTH} hint={`Use ${MIN_PASSWORD_LENGTH}–${MAX_PASSWORD_LENGTH} characters.`} value={password} error={errors.password} ref={(element) => { fields.current.password = element }} onChange={(event) => { setPassword(event.target.value); clearError('password') }} />
                 {signup && <Input label="Confirm password" name="confirmPassword" type="password" autoComplete="new-password" required maxLength={MAX_PASSWORD_LENGTH} value={confirmPassword} error={errors.confirmPassword} ref={(element) => { fields.current.confirmPassword = element }} onChange={(event) => { setConfirmPassword(event.target.value); clearError('confirmPassword') }} />}
-                <Button type="submit" disabled={disabled} className="w-full">{working ? 'Please wait…' : signup ? 'Create mock account' : 'Log in'}</Button>
-                {!signup && <Button variant="ghost" disabled={disabled} className="w-full" onClick={() => { void authenticate(true) }}>Try mock demo account</Button>}
+                <Button type="submit" disabled={disabled} className="w-full">{working ? 'Please wait…' : signup ? isLive ? 'Create account' : 'Create mock account' : 'Log in'}</Button>
+                {!isLive && !signup && <Button variant="ghost" disabled={disabled} className="w-full" onClick={() => { void authenticate(true) }}>Try mock demo account</Button>}
               </fieldset>
-              {working && <p role="status" className="text-sm text-indigo-200">{signup ? 'Creating your mock account…' : 'Signing in…'}</p>}
+              {working && <p role="status" className="text-sm text-indigo-200">{signup ? isLive ? 'Creating your account…' : 'Creating your mock account…' : 'Signing in…'}</p>}
             </form>
-            <p className="mt-6 text-sm text-slate-400">{signup ? 'Already have a mock account? ' : 'New to DevAtlas? '}<Link className="font-semibold text-indigo-300 hover:underline" to={signup ? '/login' : '/signup'}>{signup ? 'Log in' : 'Sign up'}</Link></p>
+            <p className="mt-6 text-sm text-slate-400">{signup ? isLive ? 'Already have an account? ' : 'Already have a mock account? ' : 'New to DevAtlas? '}<Link className="font-semibold text-indigo-300 hover:underline" to={signup ? '/login' : '/signup'}>{signup ? 'Log in' : 'Sign up'}</Link></p>
           </>
         )}
       </Card>

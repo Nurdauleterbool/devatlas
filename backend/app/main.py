@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from .auth import AuthManager, router as auth_router
 from .analytics import AnalyticsManager, router as analytics_router
 from .catalogue import router as catalogue_router
+from .career_selections import router as career_selections_router
 from .catalogue_seed import seed_catalogue
 from .progress import ProgressManager, router as progress_router
 from .quizzes import QuizManager, router as quiz_router
@@ -79,6 +80,7 @@ def create_app(
 
     app.include_router(auth_router)
     app.include_router(catalogue_router)
+    app.include_router(career_selections_router)
     app.include_router(progress_router)
     app.include_router(quiz_router)
     app.include_router(analytics_router)

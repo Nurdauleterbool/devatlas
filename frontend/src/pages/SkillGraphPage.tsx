@@ -94,7 +94,7 @@ export default function SkillGraphPage() {
               {careers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </div>
-          <p className="max-w-sm text-sm leading-6 text-slate-400">{signedIn ? 'Your current mock account progress.' : 'Sample demo progress. Log in to track your own learning.'} Browsing a graph does not change your saved career choices.</p>
+          <p className="max-w-sm text-sm leading-6 text-slate-400">{signedIn ? 'Your current learning progress.' : 'Preview progress. Log in to track your own learning.'} Browsing a graph does not change your saved career choices.</p>
         </div>
         <ul aria-label="Skill status legend" className="my-6 flex flex-wrap gap-2">
           {(Object.keys(statusLabels) as SkillGraphStatus[]).map((status) => <li key={status} className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusStyles[status]}`}>{statusLabels[status]}</li>)}
