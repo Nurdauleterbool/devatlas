@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { BarChart3, BookOpen, Compass, LayoutDashboard, Network } from 'lucide-react'
+import AccountControls from './AccountControls'
 
 const navigation = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -12,6 +13,7 @@ const navigation = [
 export default function SidebarNavigation({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-1 flex-col gap-8">
+      <AccountControls onNavigate={onNavigate} />
       <nav aria-label="Main navigation" className="space-y-2">
         {navigation.map(({ icon: Icon, label, path }) => (
           <NavLink

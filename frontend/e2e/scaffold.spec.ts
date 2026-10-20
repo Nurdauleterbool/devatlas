@@ -137,6 +137,7 @@ test('career roadmap handles a dataset without the default frontend career', asy
   await page.route('**/src/services/index.ts', (route) => route.fulfill({
     contentType: 'application/javascript',
     body: `export const service = {
+      getSession: async () => null,
       getCareerPaths: async () => [{ id: "backend", name: "Backend Developer", description: "Backend roadmap", skillIds: [] }],
       getSkills: async () => [], getDependencies: async () => [], getProgress: async () => [],
     }`,

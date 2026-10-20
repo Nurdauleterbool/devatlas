@@ -10,6 +10,21 @@ export interface User {
   createdAt: Timestamp
 }
 
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface SignUpInput extends LoginInput {
+  displayName: string
+}
+
+export interface AuthSession {
+  kind: 'mock'
+  user: User
+  authenticatedAt: Timestamp
+}
+
 export interface CareerPath {
   id: string
   name: string

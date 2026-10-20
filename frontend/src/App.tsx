@@ -16,6 +16,8 @@ import SidebarNavigation from './components/SidebarNavigation'
 import Button from './components/ui/Button'
 import Card from './components/ui/Card'
 import Dialog from './components/ui/Dialog'
+import AuthPage from './pages/AuthPage'
+import { useAuth } from './auth/authContext'
 
 function Dashboard() {
   const { careers, loading, error } = useCareerRoadmaps(service)
@@ -138,6 +140,8 @@ function Dashboard() {
 }
 
 export default function App() {
+  const { session } = useAuth()
+  const dataKey = session?.user.id ?? 'preview'
   const [menuOpen, setMenuOpen] = useState(false)
 
   const { pathname } = useLocation()
@@ -212,13 +216,16 @@ export default function App() {
           <Routes>
             <Route
               path="/"
-              element={<Dashboard />}
+              element={<Dashboard key={dataKey} />}
             />
 
             <Route
               path="/careers"
-              element={<CareerPathsPage />}
+              element={<CareerPathsPage key={dataKey} />}
             />
+
+            <Route path="/login" element={<AuthPage key="login" mode="login" />} />
+            <Route path="/signup" element={<AuthPage key="signup" mode="signup" />} />
 
             <Route
               path="/graph"

@@ -1,5 +1,5 @@
 import type {
-  Analytics, QuizResult, Recommendation, SkillStatus, UserSkillProgress,
+  Analytics, AuthSession, QuizResult, Recommendation, SkillStatus, User, UserSkillProgress,
 } from '../types/domain'
 import type { DevAtlasService } from './DevAtlasService'
 import { ServiceError } from './DevAtlasService'
@@ -7,6 +7,8 @@ import { seedFixtures } from './fixtures'
 import type { MockFixtures } from './fixtures'
 import { DEMO_USER_ID } from './fixtures/catalog'
 import { validateFixtures } from './fixtures/validateFixtures'
+import { normalizeEmail, validateAuth } from './authValidation'
+import { hashMockPassword, matchesMockPassword } from './mockPasswords'
 
 export type MockScenario = 'success' | 'empty' | 'error'
 
@@ -17,6 +19,7 @@ export interface MockServiceOptions {
   userId?: string
   fixtures?: MockFixtures
   now?: () => Date
+  initialSession?: 'demo' | 'anonymous'
 }
 
 function invalid(message: string): never {
@@ -34,15 +37,22 @@ function fields(value: unknown, allowed: string[]): asserts value is Record<stri
 
 /** An isolated, session-scoped in-memory implementation of the frontend contract. */
 export function createMockService(options: MockServiceOptions = {}): DevAtlasService {
-  const { latencyMs = 0, scenario = 'success', userId = DEMO_USER_ID, now = () => new Date() } = options
+  const { latencyMs = 0, scenario = 'success', now = () => new Date() } = options
   if (!Number.isFinite(latencyMs) || latencyMs < 0) invalid('latencyMs must be a finite nonnegative number.')
   if (!['success', 'empty', 'error'].includes(scenario)) invalid('Unknown mock scenario.')
   const failMethods = new Set(options.failMethods ?? [])
   const state = structuredClone(options.fixtures ?? seedFixtures)
   validateFixtures(state)
-  const currentUser = state.users.find((user) => user.id === userId)
-  if (!currentUser) throw new ServiceError('NOT_FOUND', 'Mock session user was not found.')
-  const userCreatedAt = currentUser.createdAt
+  const initialUser = state.users.find((user) => user.id === (options.userId ?? DEMO_USER_ID))
+  if (!initialUser) throw new ServiceError('NOT_FOUND', 'Mock session user was not found.')
+  const previewUser = state.users.find((user) => user.id === DEMO_USER_ID) ?? initialUser
+  const anonymous = options.initialSession === 'anonymous'
+  let currentUser = anonymous ? previewUser : initialUser
+  let userId = currentUser.id
+  let userCreatedAt = currentUser.createdAt
+  let session: AuthSession | null = anonymous ? null : { kind: 'mock', user: initialUser, authenticatedAt: initialUser.createdAt }
+  let sessionVersion = 0
+  const passwords = new Map<string, Awaited<ReturnType<typeof hashMockPassword>>>()
 
   // Empty is a coherent empty catalogue, not a successful write with an impossible empty response.
   if (scenario === 'empty') {
@@ -60,7 +70,7 @@ export function createMockService(options: MockServiceOptions = {}): DevAtlasSer
   }
 
   let sequence = 0
-  const usedIds = new Set([...state.history, ...state.attempts].map((item) => item.id))
+  const usedIds = new Set([...state.users, ...state.history, ...state.attempts].map((item) => item.id))
   function nextId(prefix: string) {
     let id: string
     do { id = `${prefix}-${++sequence}` } while (usedIds.has(id))
@@ -71,6 +81,14 @@ export function createMockService(options: MockServiceOptions = {}): DevAtlasSer
     const date = now()
     if (!(date instanceof Date) || !Number.isFinite(date.getTime())) invalid('Mock clock must return a valid Date.')
     return date.toISOString()
+  }
+  function bindSession(user: User | null, authenticatedAt = user ? timestamp() : null): AuthSession | null {
+    currentUser = user ?? previewUser
+    userId = currentUser.id
+    userCreatedAt = currentUser.createdAt
+    session = user ? { kind: 'mock', user, authenticatedAt: authenticatedAt! } : null
+    sessionVersion++
+    return session
   }
   function skill(id: string) {
     identifier(id, 'Skill ID')
@@ -105,7 +123,15 @@ export function createMockService(options: MockServiceOptions = {}): DevAtlasSer
     return state.skills.map((item) => progressForSkill(item.id))
   }
 
-  async function request<Input, Output>(method: keyof DevAtlasService, input: Input, run: (value: Input) => Output): Promise<Output> {
+  const privateMethods = new Set<keyof DevAtlasService>([
+    'getCurrentUser', 'getSelectedCareers', 'setSelectedCareers', 'updateProgress',
+    'getProgressHistory', 'submitQuizAttempt', 'getQuizAttempts', 'getAnalytics',
+  ])
+  async function request<Input, Output>(method: keyof DevAtlasService, input: Input, run: (value: Input, assertCurrent: () => void) => Output | Promise<Output>): Promise<Output> {
+    const version = sessionVersion
+    function assertCurrent() {
+      if (version !== sessionVersion) throw new ServiceError('SESSION_CHANGED', 'Session changed. Please try again.')
+    }
     // Copy before awaiting so callers cannot change a pending mutation's payload.
     let snapshot: Input
     try {
@@ -115,13 +141,58 @@ export function createMockService(options: MockServiceOptions = {}): DevAtlasSer
     }
     if (latencyMs > 0) await new Promise<void>((resolve) => setTimeout(resolve, latencyMs))
     else await Promise.resolve()
+    assertCurrent()
     if (scenario === 'error' || failMethods.has(method)) {
       throw new ServiceError('UNAVAILABLE', `Mock request failed: ${method}`)
     }
-    return structuredClone(run(snapshot))
+    if (privateMethods.has(method) && !session) throw new ServiceError('UNAUTHENTICATED', 'Sign in to use your personal data.')
+    return structuredClone(await run(snapshot, assertCurrent))
   }
 
   const service: DevAtlasService = {
+    getSession: () => request('getSession', undefined, () => session),
+    signUp: (input) => request('signUp', input, async (value, assertCurrent) => {
+      fields(value, ['displayName', 'email', 'password'])
+      const errors = validateAuth(value, 'signup')
+      if (Object.keys(errors).length) invalid(Object.values(errors)[0]!)
+      const email = normalizeEmail(value.email)
+      if (state.users.some((user) => normalizeEmail(user.email) === email)) {
+        throw new ServiceError('EMAIL_IN_USE', 'An account already uses this email. Try logging in.')
+      }
+      const credential = await hashMockPassword(value.password)
+      assertCurrent()
+      // Recheck after hashing to keep concurrent registrations atomic.
+      if (state.users.some((user) => normalizeEmail(user.email) === email)) {
+        throw new ServiceError('EMAIL_IN_USE', 'An account already uses this email. Try logging in.')
+      }
+      const createdAt = timestamp()
+      const user: User = { id: nextId('user'), displayName: value.displayName.trim(), email, createdAt }
+      state.users.push(user)
+      passwords.set(user.id, credential)
+      return bindSession(user, createdAt)!
+    }),
+    logIn: (input) => request('logIn', input, async (value, assertCurrent) => {
+      fields(value, ['email', 'password'])
+      const errors = validateAuth(value, 'login')
+      if (Object.keys(errors).length) invalid(Object.values(errors)[0]!)
+      const user = state.users.find((item) => normalizeEmail(item.email) === normalizeEmail(value.email))
+      const credential = user && passwords.get(user.id)
+      if (!user || !credential || !await matchesMockPassword(value.password, credential)) {
+        throw new ServiceError('INVALID_CREDENTIALS', 'Email or password is incorrect.')
+      }
+      assertCurrent()
+      return bindSession(user)!
+    }),
+    logInDemo: () => request('logInDemo', undefined, () => {
+      const demo = state.users.find((user) => user.id === DEMO_USER_ID)
+      if (!demo) throw new ServiceError('NOT_FOUND', 'Mock demo account is unavailable.')
+      return bindSession(demo)!
+    }),
+    logOut: () => {
+      // Invalidate pending auth/data work immediately, even while logout has latency.
+      sessionVersion++
+      return request('logOut', undefined, () => { bindSession(null) })
+    },
     getCurrentUser: () => request('getCurrentUser', undefined, () => currentUser),
     getCareerPaths: () => request('getCareerPaths', undefined, () => state.careerPaths),
     getCareerPath: (id) => request('getCareerPath', id, (value) => {

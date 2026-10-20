@@ -1,11 +1,11 @@
 # Frontend mock service contract
 
-Issue #2 implements the mock-frontend stage. It introduces no HTTP server, OpenAPI contract, authentication flow or database.
+Issue #2 implements the typed mock data layer; Issue #3 extends it with in-memory mock authentication. There is no HTTP server, OpenAPI contract or database. See [mock authentication](mock-auth.md) for session behavior and limitations.
 
 ## Modules and replacement boundary
 
 - `frontend/src/types/domain.ts`: users, career paths, shared skills/dependencies, user selections, progress/history, learning resources, practical tasks, public quizzes, responses/results/attempts, analytics and recommendations.
-- `frontend/src/services/DevAtlasService.ts`: the Promise-returning interface and `ServiceError` codes (`VALIDATION`, `NOT_FOUND`, `UNAVAILABLE`).
+- `frontend/src/services/DevAtlasService.ts`: the Promise-returning interface and `ServiceError` codes (`VALIDATION`, `NOT_FOUND`, `UNAVAILABLE`, `INVALID_CREDENTIALS`, `EMAIL_IN_USE`, `UNAUTHENTICATED`, `SESSION_CHANGED`).
 - `frontend/src/services/index.ts`: the single application binding, `service: DevAtlasService`. A future HTTP implementation replaces this binding and implements the same interface.
 - `frontend/src/services/mockService.ts`: `createMockService(options)` creates an isolated, session-scoped, mutable in-memory adapter.
 - `frontend/src/services/fixtures/`: normalized deterministic catalogue and user data, internal grading keys, and fixture validation.
@@ -19,19 +19,23 @@ All methods return Promises. The mock copies input before asynchronous latency a
 
 | Method | Behavior |
 | --- | --- |
-| `getCurrentUser()` | Read the bound demo user; no passwords or credentials are modeled |
+| `getSession()` | Return the mock session or `null`, without credentials |
+| `signUp(input)`, `logIn(input)`, `logInDemo()`, `logOut()` | Create/switch/clear the current in-memory mock session; see [auth rules](mock-auth.md) |
+| `getCurrentUser()` | Read the signed-in user without credentials; anonymous calls reject |
 | `getCareerPaths()`, `getCareerPath(id)` | Read career definitions; a missing single career returns `undefined` |
 | `getSkills()`, `getSkill(id)` | Read shared skill definitions; a missing single skill returns `undefined` |
 | `getDependencies()` | Read shared prerequisite edges |
 | `getLearningResources(skillId)`, `getPracticeTasks(skillId)` | Read material for a known skill |
 | `getSelectedCareers()`, `setSelectedCareers(careerIds)` | Read/replace this user's path selections; an empty list clears them |
-| `getProgress()`, `updateProgress({ skillId, status })` | Read all catalogue skills with user progress, or update one self-assessment status |
+| `getProgress()`, `updateProgress({ skillId, status })` | Read current-user progress (read-only demo samples when anonymous), or update one signed-in user’s self-assessment status |
 | `getProgressHistory()` | Read this user's dated status-change events |
 | `getQuizForSkill(skillId)` | Read questions/options without keys/explanations; returns `undefined` if a known skill has no quiz |
 | `submitQuizAttempt({ quizId, responses })` | Validate and grade answers; return the stored attempt plus feedback/explanations |
 | `getQuizAttempts(quizId?)` | Read all this user's attempts or filter by an existing quiz |
 | `getAnalytics()` | Derive unique-skill counts, per-career completion/verification, quiz statistics and status history |
 | `getRecommendations(careerId)` | Derive eligible next skills with deterministic rank and explanation |
+
+Personal methods (`getCurrentUser`, career selections, progress updates/history, quiz submissions/attempt history, analytics) reject with `UNAUTHENTICATED` without a session. Catalogue, resources, public quizzes, sample progress and recommendations remain readable. Requests crossing a session change reject with `SESSION_CHANGED` so delayed work cannot run under another account.
 
 Malformed IDs/payloads raise `VALIDATION`. Material/progress/quiz/recommendation requests that reference unknown entities raise `NOT_FOUND`; single career/skill lookup uses the optional result described above. Mutations validate the complete request before changing state. Unsupported properties such as a forged `userId`, `verified` or `score` are rejected.
 
@@ -41,7 +45,7 @@ The seed contains three careers with four skills each, **10 unique skills** in t
 
 `demo-student` has HTML completed, CSS and Python learning, and other skills not started. A seeded HTML attempt scores 60%, so self-reported completion does not imply quiz verification. This preserves the existing Frontend 25%, Backend 0%, Data Analyst 0% completion displays. A second sample user has separate SQL progress and an 80% SQL attempt for ownership/analytics isolation checks. Both use reserved `.test` email addresses.
 
-Fixture validation checks IDs, references, dependency cycles, quiz structure/keys, attempt scores, progress/history consistency, selections, HTTPS resources and canonical UTC timestamps. Factories clone supplied fixtures; different instances never share mutable state. The application's singleton retains mutations across route navigation, while a full page reload/new factory resets them. No browser storage or database is used.
+Fixture validation checks IDs, references, dependency cycles, quiz structure/keys, attempt scores, progress/history consistency, selections, HTTPS resources and canonical UTC timestamps. Factories clone supplied fixtures; different instances never share mutable state. The application’s singleton retains accounts, session and mutations across route navigation, while a full page reload/new factory resets them. `initialSession` defaults to `demo` for the original service consumers/tests; the application explicitly sets `anonymous`. Signup creates isolated empty progress; demo sign-in selects the seeded `demo-student`. No browser storage or database is used.
 
 ## Progress, quiz and recommendation rules
 
@@ -65,7 +69,7 @@ import { createMockService } from './services/mockService'
 const mock = createMockService({
   latencyMs: 500,
   failMethods: ['submitQuizAttempt'],
-  // Optional: userId, fixtures, now: () => new Date('2026-10-20T12:00:00.000Z')
+  // Optional: initialSession: 'anonymous', userId, fixtures, now: () => new Date('2026-10-20T12:00:00.000Z')
 })
 await mock.updateProgress({ skillId: 'python', status: 'learning' })
 ```
@@ -92,4 +96,4 @@ npm run test
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
-Use `npx playwright install chromium` and omit the executable override when using Playwright's browser. Vitest uses Node, fake timers for latency, fresh service instances for state isolation, and no extra DOM environment dependency. The browser suite exercises the actual configured mock scenarios and retains the existing route, accessibility, selection and component checks. Exact execution results and limitations are recorded in [Issue #2 QA evidence](issue-2-qa.md).
+Use `npx playwright install chromium` and omit the executable override when using Playwright's browser. Vitest uses Node, fake timers for latency, fresh service instances for state isolation, and no extra DOM environment dependency. The browser suite exercises the actual configured mock scenarios and retains the existing route, accessibility, selection and component checks. Current execution results and limitations are recorded in [Issue #3 QA evidence](issue-3-qa.md); the [Issue #2 report](issue-2-qa.md) preserves the original baseline.
