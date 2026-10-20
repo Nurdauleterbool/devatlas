@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .auth import AuthManager, router as auth_router
+from .catalogue import router as catalogue_router
+from .catalogue_seed import seed_catalogue
 from .config import Settings
 from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 
@@ -19,6 +21,7 @@ def create_app(
     settings = settings if settings is not None else Settings()
     factory = repository_factory if repository_factory is not None else InMemoryRepositoryFactory()
     app = FastAPI(title=settings.app_name, version="0.1.0")
+    seed_catalogue(factory)
     app.state.repositories = factory
     app.state.settings = settings
     app.state.auth = AuthManager(factory)
@@ -49,6 +52,7 @@ def create_app(
         return response
 
     app.include_router(auth_router)
+    app.include_router(catalogue_router)
 
     @app.get("/api/v1/health", response_model=HealthResponse, tags=["Operations"])
     def health() -> HealthResponse:
