@@ -1,6 +1,6 @@
 # DevAtlas
 
-DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. Mock registration, login and logout are implemented. FastAPI, SQLAlchemy/SQLite, production authentication, quiz screens and persistent personal progress are planned.
+DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. Mock authentication, career selection, skill graphs/materials and quiz-taking are implemented. FastAPI, SQLAlchemy/SQLite, production authentication and persistent personal progress are planned.
 
 ## Run locally
 
@@ -23,6 +23,7 @@ Open the address printed by Vite. To serve on a specific interface, use `npm run
 | `/graph` — Skill Graph | Interactive React Flow prerequisite graph, career switching, five skill states and keyboard-accessible skill details |
 | `/learning` — Learning | Ten unique skills with free resources, practice exercises and personal status controls |
 | `/skills/:skillId` — Skill details | Prerequisites, safe resource links, practice and quiz entry |
+| `/skills/:skillId/quiz` — Practice quiz | Questions, service-graded results/explanations, retakes, best score and independent verification |
 | `/analytics` — Analytics | Placeholder |
 | `/login`, `/signup` — Account | Accessible mock login, registration, demo sign-in and session states |
 
