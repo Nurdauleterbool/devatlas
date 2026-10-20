@@ -1,14 +1,16 @@
-"""FastAPI composition root. Business routes are added in Issues #11–#15."""
-from fastapi import FastAPI
+"""FastAPI composition root with versioned authentication and health routes."""
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from .auth import AuthManager, router as auth_router
 from .config import Settings
 from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 
-
 class HealthResponse(BaseModel):
     status: str
-
 
 def create_app(
     settings: Settings | None = None,
@@ -19,6 +21,7 @@ def create_app(
     app = FastAPI(title=settings.app_name, version="0.1.0")
     app.state.repositories = factory
     app.state.settings = settings
+    app.state.auth = AuthManager(factory)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
@@ -27,11 +30,30 @@ def create_app(
         allow_headers=["Content-Type"],
     )
 
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation(_request: Request, _exc: RequestValidationError):
+        return JSONResponse(status_code=422, content={"error": {"code": "VALIDATION", "message": "Invalid request."}}, headers={"Cache-Control": "no-store"})
+
+    @app.exception_handler(HTTPException)
+    async def handle_http_error(_request: Request, exc: HTTPException):
+        content = exc.detail if isinstance(exc.detail, dict) and "error" in exc.detail else {
+            "error": {"code": "UNAVAILABLE", "message": "Request failed."}
+        }
+        return JSONResponse(status_code=exc.status_code, content=content, headers={"Cache-Control": "no-store"})
+
+    @app.middleware("http")
+    async def no_store_personal_responses(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/api/v1/auth/") or response.status_code >= 400:
+            response.headers["Cache-Control"] = "no-store"
+        return response
+
+    app.include_router(auth_router)
+
     @app.get("/api/v1/health", response_model=HealthResponse, tags=["Operations"])
     def health() -> HealthResponse:
         return HealthResponse(status="ok")
 
     return app
-
 
 app = create_app()
