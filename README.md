@@ -1,10 +1,40 @@
-# DevAtlas
+# DevAtlas — Interactive IT Career & Skill Gap Analyzer
 
-DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. Mock authentication, career selection, skill graphs/materials, quizzes and personal analytics are implemented. FastAPI, SQLAlchemy/SQLite, production authentication and persistent personal progress are planned.
+DevAtlas helps Software Engineering and IT students choose a career path, understand skill prerequisites, track learning and identify what to study next. The MVP includes three paths—**Frontend Developer, Backend Developer and Data Analyst**—with ten shared skills, quizzes and personalized analytics.
 
-## Run locally
+**Current implementation (October 2026):** React + TypeScript + Vite + Tailwind CSS + React Flow frontend; FastAPI backend; SQLAlchemy + SQLite persistent repositories; Alembic migrations; Vitest, pytest and Playwright QA. The frontend uses the **real API by default**. The isolated mock adapter is available for demonstration and regression testing.
 
-Use Node.js 24 LTS and npm (validated with Node 24.19.0 and npm 11.9.0). No environment variables, credentials or database are required.
+## Requirements
+
+- Git and **Node.js 24** with npm for the frontend
+- **Python 3.12+** for FastAPI
+- Two terminals and available local ports **8000** (API) and **5173** (UI)
+
+No cloud credentials, API keys or hosted database are required for local development. SQLite creates a local database file. Use **test credentials only**.
+
+## Fresh-clone setup: run the full application
+
+```sh
+git clone https://github.com/Nurdauleterbool/devatlas.git
+cd devatlas
+```
+
+**Terminal A — backend** (run commands from the `backend` directory):
+
+```sh
+cd backend
+python -m venv .venv
+# macOS/Linux:
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -e '.[test]'
+python -m alembic upgrade head
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+The API startup also applies Alembic migrations and seeds a deterministic catalogue when using SQLite. From another terminal, check `http://127.0.0.1:8000/api/v1/health`; expected JSON is `{"status":"ok"}`. API documentation is available at `http://127.0.0.1:8000/docs`.
+
+**Terminal B — frontend** (from repository root, in a different terminal):
 
 ```sh
 cd frontend
@@ -12,51 +42,84 @@ npm ci
 npm run dev
 ```
 
-Open the address printed by Vite. To serve on a specific interface, use `npm run dev -- --host 0.0.0.0`. To check a production build locally, run `npm run build` followed by `npm run preview`. Production hosting must serve `index.html` for client-side routes.
+Open **http://localhost:5173**. Vite proxies `/api` to the local backend. Leave both terminal processes running while testing. Use localhost (not a different frontend hostname) for the default allowed browser Origin.
 
-## Current features
+**Persistence:** the local default SQLite file is `backend/devatlas.db` (ignored by git). Accounts, hashed credentials, session digests, path selections, progress, history and quiz attempts survive backend restarts. Changing/deleting this file changes local test data; do not remove it to reset an account unintentionally.
 
-| Route | Status |
+### Windows PowerShell commands
+
+Run backend commands inside `backend`; if Python is invoked through the Windows launcher, use `py -3.12 -m venv .venv` and `.\.venv\Scripts\Activate.ps1`, then the same `python -m pip install -e '.[test]'`, `python -m alembic upgrade head` and `python -m uvicorn ...`. Run `npm ci` and `npm run dev` in a separate PowerShell terminal inside `frontend`. Execution-policy configuration varies by local machine; avoid disabling system protections globally.
+
+## Optional configuration
+
+Copy `backend/.env.example` to `backend/.env` if you need local settings, or set environment variables:
+
+| Setting | Default / meaning |
 | --- | --- |
-| `/` — Dashboard | Personal selected paths, unique-skill progress, completion/verification, skill gaps and explained recommendations |
-| `/careers` — Career Paths | Service-backed single/multiple path selection, skill roadmaps, prerequisites and progress |
-| `/graph` — Skill Graph | Interactive React Flow prerequisite graph, career switching, five skill states and keyboard-accessible skill details |
-| `/learning` — Learning | Ten unique skills with free resources, practice exercises and personal status controls |
-| `/skills/:skillId` — Skill details | Prerequisites, safe resource links, practice and quiz entry |
-| `/skills/:skillId/quiz` — Practice quiz | Questions, service-graded results/explanations, retakes, best score and independent verification |
-| `/analytics` — Analytics | Personal unique-skill totals, career progress, dated completion chart, learning history and all quiz attempts |
-| `/login`, `/signup` — Account | Accessible mock login, registration, demo sign-in and session states |
+| `DEVATLAS_DATABASE_URL` | `sqlite:///./devatlas.db` from `backend/`; SQLite file path |
+| `DEVATLAS_FRONTEND_ORIGIN` | `http://localhost:5173`; browser Origin allowlist |
+| `DEVATLAS_ENVIRONMENT` | `development`; set `production` only behind HTTPS with Secure cookies |
+| `DEVATLAS_STORAGE_BACKEND` | App server runs SQLite by default; `create_app()` test factory uses isolated memory |
+| `VITE_SERVICE_MODE` | `http` (default live API), or `mock` (demo/test mode) |
 
-Unknown routes show a page-not-found screen. The desktop sidebar and mobile modal drawer link to all five routes. Navigation supports visible keyboard focus, a skip link, an active-route indicator, Escape dismissal and focus restoration. Visitors see explicitly labelled sample progress. Registered mock users have their own in-memory progress; switching accounts refreshes personalized views. Career selections are saved through the service for the current mock instance and update the Dashboard after confirmation. Shared skills count once across selected paths.
+To run only the mock frontend without FastAPI, use `VITE_SERVICE_MODE=mock npm run dev` on macOS/Linux, or set `$env:VITE_SERVICE_MODE='mock'` before `npm run dev` in PowerShell. **Mock-mode accounts and progress are temporary**, unlike the SQLite-backed app.
 
-The replaceable `DevAtlasService` contract supplies users, careers, shared skills/dependencies, per-user progress/history, resources, practical tasks, quizzes/attempts, analytics and deterministic recommendations. The mock supports validated in-memory updates, quiz scoring and configurable loading/empty/error states. Fixtures include 10 unique skills shared across the three paths, with one five-question quiz per skill. See [mock service contract and scenarios](_docs/mock-service.md) and [career selection/dashboard conventions](_docs/career-dashboard.md).
+## Feature walkthrough (roughly 5 minutes)
 
-To try the seeded demo account, open `/login` and choose **Try mock demo account**; no demo password is displayed or required. Alternatively, register a test account with a name, email and an 8–128 character password. Accounts, sessions and changes last only until a full page reload; this is a frontend prototype, not production authentication. See [mock authentication](_docs/mock-auth.md) for service usage and limitations.
+1. Open `/`, examine the public dashboard preview, the `/careers` list and `/graph` prerequisite graph.
+2. Go to `/signup`; create a test user with a valid email and a unique password. Choose **Frontend Developer** on the Dashboard or Career Paths screen.
+3. View `/graph?path=frontend`: HTML unlocks prerequisite-dependent CSS/JavaScript learning; open a node or use its accessible keyboard control.
+4. Visit `/skills/html`: read prerequisites and free resources, mark your self-assessment as **Learning** and then **Completed**.
+5. Open `/skills/html/quiz`: answer the five multiple-choice questions and submit. **80% or better** marks the skill quiz-verified; verification is independent of self-assessed completion. Review the explanations and attempt a retake.
+6. Visit `/analytics` for completion, quiz statistics, dated progress history and per-career results. Reload the browser and confirm persistence.
+7. Log out and create a second test account. Verify that its learning history, quiz results and saved paths are distinct from the first account.
 
-Shared `Button`, `Card`, `Input` and `Dialog` components preserve the dark navy/indigo design. See [frontend setup and design conventions](frontend/README.md) for component usage and accessibility behavior.
+**Important:** passing an in-app practice quiz is **not** professional certification.
 
-## Verification
+## API and data model
 
-Run from `frontend`:
+All API endpoints use `/api/v1`: session authentication (`/auth/*`), public careers and skills, prerequisite dependencies, resources, per-user career selections, learning progress and history, quiz submissions/attempts, recommendations and owned analytics. The canonical schema is [_docs/openapi.yml](_docs/openapi.yml); mapping, validation and ownership are described in [_docs/api-contract.md](_docs/api-contract.md). The SQLite/Alembic ORM has 16 relational tables. The frontend's `DevAtlasService` interface supports both HTTP and mock adapters without components importing persistence internals.
+
+## Tests and evidence
+
+From `frontend/`:
 
 ```sh
+npm ci
 npm run build
 npm run lint
-npm run test
+npm test
 npx playwright install chromium
 npm run test:e2e
 ```
 
-For an installed Chromium, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` instead of downloading a browser. Vitest covers fixtures, service behavior, authentication validation and account isolation; browser tests cover routes, actual mock scenarios, component semantics and desktop/mobile keyboard interaction. They start a dedicated Vite server on port 4173. See [Issue #4 QA evidence](_docs/issue-4-qa.md), [Issue #3 QA evidence](_docs/issue-3-qa.md), [Issue #2 QA evidence](_docs/issue-2-qa.md) and the earlier [Issue #1 QA checklist](_docs/issue-1-qa.md).
+The last command runs the **mock** browser suite via its isolated Vite web server. To execute the **live** end-to-end browser suite, first launch the backend (using a disposable test SQLite database) as explained in [_docs/issue-20-qa.md](_docs/issue-20-qa.md), then run:
 
-## Project workflow
+```sh
+npm run test:e2e -- --config=playwright.live.config.ts
+```
 
-See [verified development progress and continuation checkpoint](_docs/development-progress.md) for actual issue/PR states and remaining dependencies.
+From `backend/`:
 
-Read [AGENTS.md](AGENTS.md), [process.md](process.md), [_docs/plan.md](_docs/plan.md), [_docs/architecture.md](_docs/architecture.md), [_docs/issue-backlog.md](_docs/issue-backlog.md) and the relevant [role](roles/) before development. Work from an issue with testable acceptance criteria, use a separate branch/PR, and leave issue closure to QA.
+```sh
+python -m pytest -q
+python -m alembic current
+```
 
-The [OpenAPI contract](_docs/openapi.yml) and [HTTP mapping/security decisions](_docs/api-contract.md) define the next backend boundary. Validate it using the isolated Python tooling described there.
+GitHub Actions workflows are [Frontend CI](.github/workflows/frontend-ci.yml), [Backend tests](.github/workflows/backend-tests.yml) and [Browser E2E](.github/workflows/browser-e2e.yml). Their logs (not an unverified static count) are the authoritative test evidence. A fresh-clone setup smoke workflow also validates the commands in this README.
 
-Required sequence: mock frontend → OpenAPI contract → in-memory FastAPI backend → SQLite via SQLAlchemy → frontend/backend integration → QA. Vitest and Playwright are installed for unit and browser tests. React Flow is installed for the interactive graph. Pytest remains part of the planned backend stage.
+For historical QA reports see the `_docs/issue-*-qa.md` files. Full-stack user journey and browser evidence are documented in [_docs/issue-20-qa.md](_docs/issue-20-qa.md); the manual accessibility and user-testing matrix is [_docs/issue-21-manual-uat.md](_docs/issue-21-manual-uat.md).
 
-`chat-brainstorm.md` is a decision summary, **not the complete original transcript**. Export the original chat and add it separately before submission.
+## Known limitations / submission status
+
+- This is a **local educational MVP**, not a production-hardened hosted service. SQLite and in-process locks are not designed for distributed multiworker deployment. Authentication lacks email verification and dedicated rate limiting.
+- Session cookies require HTTPS and correct secure origin settings for any production deployment. No OAuth, AI chat, social features or external data synchronization is included.
+- Real mobile/desktop **human** UAT and accessibility signoff are still pending under [Issue #21](https://github.com/Nurdauleterbool/devatlas/issues/21). Browser automation is additional evidence, not manual testing.
+- Final submission documentation is [Issue #22](https://github.com/Nurdauleterbool/devatlas/issues/22); **do not close it until #21 has human QA verification and the final checklist is signed off**.
+- `chat-brainstorm.md` is a decision summary, **not** the original brainstorming chat transcript. If the course requires that original transcript, attach the real export separately; do not manufacture it.
+
+## Development process and project materials
+
+[Product plan](_docs/plan.md) · [Architecture](_docs/architecture.md) · [API decisions](_docs/api-contract.md) · [Engineering process](process.md) · [Agent guidelines](AGENTS.md) · [Issue backlog](_docs/issue-backlog.md) · [Role definitions](roles/) · [Submission readiness](_docs/issue-22-submission.md).
+
+Follow the stage gates: issue → implementation branch → tests/evidence → PR → QA review → verified closure. Post-MVP issues are deferred unless separately prioritized.

@@ -71,3 +71,10 @@ python3 -m venv /workspace/.venvs/devatlas-contract
 ```
 
 The validator checks OpenAPI schema validity, local references and typed examples, all service mappings, unique operation IDs, private-route security and absence of public grading fields. Backend implementation and executable server contract tests follow in #10–#18; frontend HTTP integration follows in #19. This issue does not claim those implementations exist.
+
+
+## Implementation status — 2026-10-20
+
+The contract was originally frozen in #9; the descriptions above that use future tense are **historical design notes**. The live backend routes are now implemented through #19 and consumed by `frontend/src/services/httpService.ts`. In particular, `/me/careers` is implemented in `backend/app/career_selections.py`; both modes share the typed `DevAtlasService` shape. Deployed `app.main:app` uses SQLite and Alembic, while `create_app()` can build an in-memory test app. Source of truth for endpoint shapes remains [openapi.yml](openapi.yml). Validate any new public route or schema against this file and backend OpenAPI output before changing API consumers.
+
+Live E2E testing with a temporary SQLite database is implemented in `frontend/e2e/live-journey.spec.ts`; manual mobile/user signoff is still pending Issue #21.

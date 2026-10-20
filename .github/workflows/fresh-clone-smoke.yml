@@ -1,0 +1,68 @@
+name: Fresh clone setup smoke
+
+on:
+  pull_request:
+    paths:
+      - "README.md"
+      - "backend/**"
+      - "frontend/**"
+      - "_docs/architecture.md"
+      - "_docs/plan.md"
+      - "_docs/issue-22-submission.md"
+      - ".github/workflows/fresh-clone-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "backend/**"
+      - "frontend/**"
+      - ".github/workflows/fresh-clone-smoke.yml"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Fresh-install backend
+        working-directory: backend
+        run: python -m pip install -e '.[test]'
+      - name: Apply migration to disposable SQLite
+        working-directory: backend
+        env:
+          DEVATLAS_DATABASE_URL: sqlite:///${{ runner.temp }}/fresh-clone-smoke.sqlite3
+        run: |
+          python -m alembic upgrade head
+          python -m alembic current
+      - name: Start FastAPI with fresh migrated database and validate health
+        working-directory: backend
+        env:
+          DEVATLAS_DATABASE_URL: sqlite:///${{ runner.temp }}/fresh-clone-smoke.sqlite3
+        run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > "${{ runner.temp }}/smoke-api.log" 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health | grep -q '"status":"ok"'; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat "${{ runner.temp }}/smoke-api.log"
+          exit 1
+      - name: Fresh-install frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Type-check and build React
+        working-directory: frontend
+        run: npm run build
+      - name: Validate served catalogue through real API
+        run: |
+          curl -fsS http://127.0.0.1:8000/api/v1/career-paths | python -c 'import json,sys; d=json.load(sys.stdin); assert len(d)==3'
+          curl -fsS http://127.0.0.1:8000/api/v1/skills | python -c 'import json,sys; d=json.load(sys.stdin); assert len(d)==10'

@@ -44,16 +44,16 @@ Students know individual technologies but struggle to identify missing skills an
 6. Run and thoroughly test; create GitHub issues for bugs with `user-test-bug`; PM and QA update requirements and test cases
 7. QA closes all `mvp` and `user-test-bug` issues before deadline
 
-## Candidate technology stacks — not decided
+## Historical stack alternatives (decision resolved below)
 A. React + TypeScript + Tailwind + React Flow; FastAPI + SQLAlchemy + SQLite; Vitest, Pytest, Playwright.
 B. React + TypeScript + Tailwind + React Flow; Express + Prisma + SQLite; Vitest, Supertest, Playwright.
 C. React + TypeScript + Tailwind; Django REST Framework + Django ORM + SQLite; Django tests, Vitest, Playwright.
 
-## Open decisions
-- Select technology stack.
-- Define exact skill taxonomy, quiz question bank and recommendation ranking rules.
-- Define API resources and security details.
-- Confirm UI design references and deployment plan.
+## Historical open decisions — implementation status
+- Technology stack: **resolved** (React, FastAPI, SQLAlchemy, SQLite, Alembic).
+- Skill taxonomy and quiz bank: **resolved for MVP** (3 careers, 10 skills, 10 quizzes, 5 questions each).
+- API resources and security: **documented** in `_docs/openapi.yml` and `_docs/api-contract.md`.
+- Visual direction: existing responsive navy/indigo interface implemented; hosting/deployment outside local-MVP scope.
 
 ## Approved technology stack
 - Frontend: React, TypeScript, Vite, Tailwind CSS, React Flow.
@@ -70,7 +70,7 @@ C. React + TypeScript + Tailwind; Django REST Framework + Django ORM + SQLite; D
 5. Connect frontend to HTTP API; integration and E2E tests.
 6. Manual user testing, bug issues, regression checks, QA closure.
 
-## Proposed business rules (to confirm during implementation)
+## Implemented business rules
 - Quiz pass: correct / total >= 0.8, computed server-side.
 - `verified` is independent of self-reported `completed`.
 - Skill prerequisites form an acyclic directed graph, validated on seed/import.
@@ -82,3 +82,10 @@ C. React + TypeScript + Tailwind; Django REST Framework + Django ORM + SQLite; D
 - A new user can register, log in, select a path, explore skills, record progress, take a quiz, and see updated dashboard and recommendations after refresh.
 - Data persists across server restarts. Users cannot access each other's progress.
 - All MVP and user-test-bug issues pass QA and are closed before deadline.
+
+
+## Implementation status — 2026-10-20
+
+MVP features from Issues #1–#20 are merged and automatically checked, including persistent SQLite and credentialed React HTTP integration. Issue #21 contains a human desktop/mobile checklist and accessibility smoke tests; browser automation is merged but manual results/signoff are still required. Issue #22 updates reproducible setup, architecture, process, demo and submission checklist. This plan is a design record, not a claim that UAT or final submission has already passed.
+
+Local walkthrough, commands and current limitations: [root README](../README.md); architecture: [architecture.md](architecture.md); manual acceptance: [issue-21-manual-uat.md](issue-21-manual-uat.md); submission gate: [issue-22-submission.md](issue-22-submission.md).

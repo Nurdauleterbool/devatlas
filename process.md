@@ -13,3 +13,10 @@
 
 ## Issue template
 Title; Goal; Description; Acceptance Criteria (testable); Dependencies; Test Plan; Evidence; label.
+
+
+## Implementation checkpoint — 2026-10-20
+
+The live FastAPI + SQLite system and Playwright CI were merged through MVP #20. Automated desktop/mobile smoke coverage for #21 is merged; **the real human manual sessions and signoff are not yet complete**. Issue #22 documentation can be developed/reviewed in parallel but must not be marked accepted before human QA finishes #21. PR success does not replace this gate.
+
+For submission, use the root [README](README.md) and [_docs/issue-22-submission.md](_docs/issue-22-submission.md) to record a fresh-clone setup, actual CI links, issue statuses, demo and remaining limitations. Never create fictitious bug reports or close open issues to improve the statistics.
