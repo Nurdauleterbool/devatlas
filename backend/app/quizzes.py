@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from .auth import PublicUser, check_unsafe_origin, denied, iso_time, require_user
+from .catalogue_seed import SKILLS
 from .repositories import RepositoryFactory
 
 router = APIRouter(prefix="/api/v1", tags=["Quizzes"])
@@ -80,7 +81,7 @@ def quiz_seeds() -> dict:
 
 
 def validate_quiz_seeds(seeds: dict, factory: RepositoryFactory) -> None:
-    skills = {item["id"] for item in factory.create("skills").list()}
+    skills = {skill["id"] for skill in SKILLS}
     quizzes = seeds["quizzes"]
     keys = seeds["answerKeys"]
     if len({quiz["id"] for quiz in quizzes}) != len(quizzes):
@@ -121,8 +122,14 @@ class QuizManager:
         self._keys = self._data["answerKeys"]
         repository = factory.create("quizzes")
         if not repository.list():
+            # Supplied custom catalogues must not receive orphaned seed quizzes.
+            present_skills = {
+                item.get("id") for item in factory.create("skills").list()
+                if isinstance(item, dict)
+            }
             for quiz in self._data["quizzes"]:
-                repository.put(quiz["id"], quiz)
+                if quiz["skillId"] in present_skills:
+                    repository.put(quiz["id"], quiz)
 
     def quiz_for_skill(self, skill_id: str) -> dict | None:
         if self.factory.create("skills").get(skill_id) is None:
@@ -205,8 +212,7 @@ CurrentUser = Annotated[PublicUser, Depends(require_user)]
 def get_skill_quiz(skillId: str, manager: Manager, response: Response):
     quiz = manager.quiz_for_skill(skillId)
     if quiz is None:
-        response.status_code = 204
-        return None
+        return Response(status_code=204)
     # Explicit public model prevents any future internal private fields from leaking.
     return PublicQuiz(**quiz)
 
