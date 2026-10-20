@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { ArrowRight, CheckCircle2, Clock3, Circle } from 'lucide-react'
-import { service } from '../services'
+import { useSearchParams } from 'react-router-dom'
+import { CheckCircle2, Clock3, Circle } from 'lucide-react'
+import { useCareers } from '../careers/careerContext'
+import CareerSelection, { CareerFeedback } from '../components/CareerSelection'
+import CareerProgress from '../components/CareerProgress'
 import type { SkillStatus } from '../types/domain'
-import { useCareerRoadmaps } from '../hooks/useCareerRoadmaps'
-import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
 const statusLabels: Record<SkillStatus, string> = {
@@ -25,8 +25,11 @@ function StatusIcon({ status }: { status: SkillStatus }) {
 }
 
 export default function CareerPathsPage() {
-  const { careers, loading, error } = useCareerRoadmaps(service)
-  const [activeId, setActiveId] = useState('frontend')
+  const { data, loading, error, signedIn } = useCareers()
+  const careers = data?.careers ?? []
+  const [params, setParams] = useSearchParams()
+  const activeId = params.get('path') ?? data?.selectedIds[0]
+  const preview = (id: string) => setParams({ path: id }, { replace: true })
 
   const career = careers.find((item) => item.id === activeId) ?? careers[0]
   const completed = career?.skills.filter((skill) => skill.progress.status === 'completed').length ?? 0
@@ -34,7 +37,7 @@ export default function CareerPathsPage() {
   const progress = total ? Math.round((completed / total) * 100) : 0
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12 md:px-12">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-10">
       <p className="text-sm font-semibold uppercase tracking-widest text-indigo-400">
         Explore your future
       </p>
@@ -48,35 +51,13 @@ export default function CareerPathsPage() {
         Track your progress and explore your next steps.
       </p>
 
-      {loading && <p role="status" className="mt-8 text-slate-400">Loading career paths...</p>}
-      {error && <p role="alert" className="mt-8 text-red-400">Could not load career paths.</p>}
-
+      <CareerFeedback />
       {!loading && !error && (
         <>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {careers.map((item) => (
-              <Button
-                variant="ghost"
-                key={item.id}
-                onClick={() => setActiveId(item.id)}
-                aria-pressed={career?.id === item.id}
-                className={`flex-col items-start border text-left ${
-                  career?.id === item.id
-                    ? 'border-indigo-400 bg-indigo-500/15'
-                    : 'border-white/10 bg-surface hover:border-indigo-400/50'
-                }`}
-              >
-                <span className="text-lg font-semibold text-slate-100">{item.name}</span>
-                <span className="mt-2 text-sm font-normal text-slate-400">{item.description}</span>
-                <span className="mt-4 text-sm text-indigo-300">
-                  {item.skills.length} skills <ArrowRight size={15} className="ml-1 inline" aria-hidden="true" />
-                </span>
-              </Button>
-            ))}
-          </div>
+          <CareerSelection activeId={career?.id} onPreview={preview} />
 
           {career && (
-            <section aria-labelledby="roadmap-title" className="mt-10 rounded-3xl border border-white/10 bg-surface p-6 md:p-8">
+            <section aria-labelledby="roadmap-title" className="mt-10 rounded-3xl border border-white/10 bg-surface p-4 sm:p-6 md:p-8">
               <div className="flex flex-wrap items-start justify-between gap-5">
                 <div>
                   <p className="text-sm text-indigo-400">Your roadmap</p>
@@ -88,19 +69,7 @@ export default function CareerPathsPage() {
                 </div>
               </div>
 
-              <div
-                className="mt-6 h-3 overflow-hidden rounded-full bg-white/10"
-                role="progressbar"
-                aria-label="Career progress"
-                aria-valuenow={progress}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <div
-                  className="h-full rounded-full bg-indigo-500 transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <CareerProgress value={progress} />
 
               <h3 className="mt-10 text-lg font-semibold">Required skills</h3>
 
@@ -117,6 +86,8 @@ export default function CareerPathsPage() {
                       </span>
                     </div>
 
+                    <p className="mt-3 text-sm text-slate-400">{skill.description}</p>
+                    <p className="mt-3 text-xs text-indigo-300">{skill.progress.verified ? 'Practice quiz verified (80% or higher)' : 'Not quiz verified'}</p>
                     <p className="mt-4 text-sm text-slate-400">
                       {skill.prerequisites.length
                         ? `Prerequisites: ${skill.prerequisites.map((item) => item.name).join(', ')}`
@@ -127,14 +98,11 @@ export default function CareerPathsPage() {
               </div>
 
               <p className="mt-8 text-xs text-slate-400">
-                Demo progress shown. Personal progress tracking will be connected later.
+                {signedIn ? 'Your current mock account progress. ' : 'Sample demo progress. Log in to save career choices. '}Completion is self-reported; practice quiz verification is independent and is not professional certification.
               </p>
             </section>
           )}
 
-          {careers.length === 0 && (
-            <p className="mt-8 text-slate-400">No career paths available.</p>
-          )}
         </>
       )}
     </div>

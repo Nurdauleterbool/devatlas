@@ -21,7 +21,7 @@ const session = await mock.getSession() // public user; never a password/hash
 await mock.logOut()
 ```
 
-Signup accounts, hashes, session and personal data exist only in one adapter's memory. Route navigation retains them. A full reload/new instance resets them, requiring registration again. There is no local/session storage. Registered users start with unstarted skills, no attempts, no history and no selections; existing demo fixtures are preserved. Dashboard/Career Paths remount on account changes to discard stale personalized views and local selections.
+Signup accounts, hashes, session and personal data exist only in one adapter's memory. Route navigation retains them. A full reload/new instance resets them, requiring registration again. There is no local/session storage. Registered users start with unstarted skills, no attempts, no history and no selections; existing demo fixtures are preserved. The career workspace remounts on account changes to discard stale personalized views. Career selections are saved/read through the service; roadmap previews do not alter them.
 
 Personal operations require a session: current user, career selections, progress mutation/history, quiz submissions/attempt history and analytics. Shared catalogue, dependencies, resources, public quizzes, recommendations and read-only demo progress are available anonymously. No method accepts a caller-supplied owner ID. Request revisions reject pending work across session changes; logout invalidates older work immediately. Password hashing rechecks the revision before any mutation. A configured failed logout keeps the prior session and the UI offers retry.
 

@@ -33,7 +33,11 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 
 ## Structure and routes
 
-- `src/App.tsx`: application layout, mobile drawer, Dashboard and route definitions.
+- `src/App.tsx`: application layout, mobile drawer and route definitions.
+- `src/pages/DashboardPage.tsx`: personalized overview, unique-skill totals, gaps, quiz verification and recommendations.
+- `src/careers/`: session-scoped service response cache, selection coordination and retry state shared by Dashboard/Career Paths.
+- `src/services/careerDashboard.ts`: adapter-independent dashboard composition and serialized selection writer.
+- `src/components/CareerSelection.tsx`, `CareerProgress.tsx`: reusable selection cards, request feedback and labelled progress bars.
 - `src/auth/`: contract-backed session provider and typed authentication context.
 - `src/pages/AuthPage.tsx`: responsive login/signup, accessible validation and pending/error/success states.
 - `src/components/AccountControls.tsx`: anonymous preview, signed-in identity and logout controls shared by both sidebars.
@@ -51,7 +55,7 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/index.css`: Tailwind import, theme tokens, global keyboard focus, modal/drawer styles and reduced-motion support.
 - `e2e/`: route, mock-state and UI accessibility regression tests.
 
-Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph, Learning and Analytics remain placeholders. Dashboard selection is local component state and resets when the page is remounted. Anonymous pages read labelled demo progress; signed-in pages read the current user’s progress and reset local selections on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
+Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph, Learning and Analytics remain placeholders. Career selections come from `getSelectedCareers`, and `setSelectedCareers` persists changes across route navigation within this mock instance. Anonymous pages allow roadmap previews but require login to save choices. Signed-in pages read the current user’s progress and reset their cached workspace on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
 
 ## Mock data and UI scenarios
 
@@ -64,6 +68,14 @@ VITE_MOCK_SCENARIO=error VITE_MOCK_LATENCY_MS=1000 npm run dev
 ```
 
 Accepted scenarios are `success`, `empty`, and `error`; loading uses finite latency. Empty retains the demo user and clears the catalogue/progress/attempts; unknown writes are rejected. Invalid settings are rejected rather than silently ignored. For programmatic per-method failures and clock/fixture injection, see the [mock service documentation](../_docs/mock-service.md).
+
+## Career selection and Dashboard
+
+Open Dashboard or Career Paths while signed in. **Choose path** replaces the selection with one path; **Include …** checkboxes add/remove additional paths, and **Clear selected paths** clears them. **View roadmap** changes the preview without saving a different career. Roadmap previews use the `path` query parameter, never the saved-selection store. Anonymous **Explore path** links allow public browsing only.
+
+The confirmed selection, progress and metrics are reread through `DevAtlasService` after a write. Pending checkboxes represent request intent, while the Dashboard keeps its last confirmed totals until the latest save and refresh complete. Rapid writes are serialized/coalesced, stale responses are ignored, and failure offers retry. Completed and quiz-verified skills remain separate; overall counts deduplicate skill IDs across selected careers. Gaps mean required skills not self-reported completed, including independently verified skills where appropriate. Recommendations and reasons come from the adapter, with shared recommendations grouped by skill and retaining each path's explanation.
+
+No selection and an empty catalogue have explicit empty states. Loading and retry messages use live feedback; native buttons/checkboxes support keyboard selection. Selection/session/data reset on a full page reload. Progress editing, quiz screens, interactive graphs and detailed analytics remain later issues. See [technical notes](../_docs/career-dashboard.md) and [Issue #4 QA](../_docs/issue-4-qa.md).
 
 ## Mock accounts and sessions
 
@@ -112,4 +124,4 @@ Use links for navigation and buttons for actions. On mobile (below 768px), the d
 
 ## QA
 
-Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #3 QA report](../_docs/issue-3-qa.md) records current results (104 unit tests and 20 browser tests); [Issue #2 QA](../_docs/issue-2-qa.md) records the earlier service baseline; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.
+Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #4 QA report](../_docs/issue-4-qa.md) records current verification; [Issue #3 QA](../_docs/issue-3-qa.md) retains the auth baseline; [Issue #2 QA](../_docs/issue-2-qa.md) records the earlier service baseline; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.

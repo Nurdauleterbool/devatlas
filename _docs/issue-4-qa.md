@@ -1,0 +1,107 @@
+# Issue #4 — career selection and Dashboard QA
+
+Scope: MVP-04, frontend/mock stage. Branch `feat/issue-4-career-dashboard` starts from fetched `origin/main` `2fd8a8a` (Issue #3 merged in PR #29). The initial working tree was clean. Repository instructions and the actual Issue #4 acceptance criteria were read before implementation. No backend, database, OpenAPI, dependency or fixture changes.
+
+## Implemented evidence
+
+- All three career definitions, descriptions and required skills come through `DevAtlasService` and the existing roadmap composer.
+- Signed-in users choose one path, include additional paths or clear selections using `setSelectedCareers`. Confirmed selection is reread with `getSelectedCareers`; navigation retains it within the mock instance.
+- Dashboard shows selected careers, self-reported completion, quiz verification, unfinished required skills, and adapter-provided recommendations/reasons. Per-path summaries consume analytics. Shared skills/recommendations are grouped by skill ID; Backend + Analyst show six unique skills, not eight memberships.
+- Serialized/coalesced writes, copied request inputs, request revisions and cancellation protect rapid switching and account transitions. Pending intentions do not replace confirmed dashboard totals. Background saves continue when visiting other application routes.
+- Loading, initial-read retry, write/refresh retry, no selected career, empty catalogue, no skill gaps and no eligible recommendation states are implemented. A failed refresh explicitly warns that a write may already have saved.
+- Existing Button/Card, native labelled checkboxes, semantic headings/regions, named progress bars and live feedback retain the navy/indigo design. Existing auth, skip link, focus styles and mobile drawer behavior are preserved.
+
+## Final executed verification
+
+Executed from `frontend`, Node 24.19.0, npm 11.9.0. Browser: installed system Chromium 154.0.8037.57 via the repository-supported override. Every final command exited 0.
+
+| Command | Result | Executed counts |
+| --- | --- | --- |
+| `npm run build` | PASS — TypeScript + Vite | 1,957 modules; no test count |
+| `npm run lint` | PASS — no lint errors or warnings | Static analysis; no test count |
+| `npm run test` | PASS | 122 passed, 0 failed, 0 skipped; 6 files |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | PASS | 32 passed, 0 failed, 0 skipped; 2 workers, 38.7 seconds |
+| `git diff --check` | PASS | No whitespace errors |
+
+The full suites ran, including the 104 earlier unit tests and 20 earlier browser scenarios. Added 18 unit cases and 12 browser cases. The original scaffold selection test now signs into the demo account and asserts service-backed saving instead of the obsolete anonymous local-only selection. Its route/roadmap coverage remains; the synthetic fallback heading assertion now targets its semantic heading level. All nine Issue #3 auth tests remain unchanged and pass.
+
+No final check was blocked by the environment. Chromium was used directly; Playwright's bundled browser was not needed. npm update notices and the runner's `NO_COLOR`/`FORCE_COLOR` warnings were informational. Two early npm invocations from the repository root failed with missing `package.json`; they did not execute tests and are not counted as verification.
+
+## Coverage and development corrections
+
+Unit cases cover anonymous/public reads, saved selection, all three switches, scoped calculations, shared Python/SQL totals, independent quiz verification, adapter reasons, no selection/empty/completed paths, user-specific selection restoration, failed/inconsistent adapter responses, input snapshots, skipped obsolete writes, already-running writes, cancellation and retry.
+
+Browser cases cover signup-to-selection-to-dashboard, all paths, multiple paths/shared reasons, public preview, clearing selection, latency/rapid switching, navigation during saves, read/write/post-write-refresh failures and retries, empty signed-in catalogue, separate accounts, and native keyboard selection. Responsive checks execute at 320, 375, 768 and 1280 px with assertions against horizontal overflow on Dashboard and Career Paths. Runtime-error checks passed for all exercised scenarios.
+
+An early implementation keyed the career provider around auth pages, remounting signup and losing its success announcement. Existing auth regression tests caught this; auth pages now sit outside the keyed application layout. Early lint warnings were resolved. New browser test setup was corrected to use keyboard modality before checking `:focus-visible`, keep a simulated read failure active through StrictMode loads, and wait for route completion/use a named progress bar. No assertions were disabled or tests skipped. Final full suites pass.
+
+Desktop Dashboard (1440 px) and mobile Dashboard/Career Paths (320 px) screenshots were generated and visually inspected. Cards, hierarchy, progress labels, statuses and controls fit without observed clipping. The mobile browser check also measured no overflow.
+
+## Changed files
+
+| File | Change |
+| --- | --- |
+| `frontend/src/App.tsx` | Shared keyed application workspace, separate auth routes, extracted Dashboard |
+| `frontend/src/pages/DashboardPage.tsx` | Personalized dashboard and public career discovery |
+| `frontend/src/pages/CareerPathsPage.tsx` | Saved selection, query-based roadmap preview, correct personal/sample labels |
+| `frontend/src/careers/CareerProvider.tsx` | Confirmed response cache, latest-request guards, selection lifecycle/retry |
+| `frontend/src/careers/careerContext.ts` | Typed shared career workspace context |
+| `frontend/src/components/CareerSelection.tsx` | Shared career cards, selection controls, request feedback |
+| `frontend/src/components/CareerProgress.tsx` | Reusable labelled progress indicator |
+| `frontend/src/services/careerDashboard.ts` | Contract-only composition and serialized/cancellable selection writer |
+| `frontend/src/services/__tests__/careerDashboard.test.ts` | 18 new unit cases |
+| `frontend/e2e/career-dashboard.spec.ts` | 12 new browser cases |
+| `frontend/e2e/scaffold.spec.ts` | Existing selection-flow/semantic assertion adaptation |
+| `README.md`, `frontend/README.md` | Current features, usage, commands and lifecycle |
+| `_docs/architecture.md`, `_docs/mock-auth.md` | Updated workspace/session boundaries |
+| `_docs/career-dashboard.md`, `_docs/issue-4-qa.md` | Technical decisions and this QA evidence |
+| `_docs/development-progress.md`, `_docs/issue-4-pr.md` | Verified backlog, release blocker/checkpoint and prepared PR body |
+
+## Additional manual reviewer checklist
+
+These are suggested human checks, not claimed completed tests:
+
+- [ ] Use a screen reader for path buttons/checkboxes, save/error announcements and named progress bars.
+- [ ] Check browser zoom/preferred text scaling, long account names, reduced motion and a physical mobile keyboard.
+- [ ] Review the flow in Firefox and Safari; automated coverage is Chromium only.
+- [ ] Select Backend + Data Analyst, confirm six unique skills, then switch to Frontend and inspect its independent completion/verification numbers.
+- [ ] Sign out, create another account and confirm no selected careers leak between users; reload and confirm the documented mock reset is understood.
+
+## Limitations and recommendation
+
+Mock accounts, sessions, selections and progress reset on full reload. No server/storage or production authentication is introduced. Progress editing, quiz screens, graph interaction and detailed Analytics remain later issues. External changes from another tab/HTTP API are not subscribed to; current UI writes refresh the service view. Human screen-reader, Firefox/Safari and physical-device checks remain additional review work.
+
+**READY FOR REVIEW** for Issue #4's scope. Publication status and any PR URL are reported after actual Git/GitHub operations; this report does not assert a PR was created. No merge or Issue #4 closure is performed.
+
+
+## Release follow-up — 2026-10-20
+
+The complete frontend regression was rerun on implementation commit `4dfd4c5`: build PASS (1,957 modules), lint PASS (no lint errors/warnings), Vitest 122 passed / 0 failed / 0 skipped across 6 files, Playwright 32 passed / 0 failed / 0 skipped in 30.1s using system Chromium. All commands exited 0. No new application changes or defects were identified in this follow-up; only progress/publication documentation changed afterward.
+
+GitHub Issues #1–#3 are closed and PRs #27–#29 are actually merged. Issue #4 remains open, its branch is pushed, and public branch-filtered PR search returns no PR. A fresh `gh pr create` attempt failed with `Post "https://api.github.com/graphql": Forbidden`; merge/closure were not attempted without a PR. The next implementation (#5) depends on #4, and all later required issues depend on it transitively. The whole MVP is not release-ready. See [development progress](development-progress.md) for the exact recovery steps and [prepared PR body](issue-4-pr.md) for manual publication. Issue #4 remains **READY FOR REVIEW / INTEGRATION BLOCKED**, not completed.
+
+
+## Independent QA and auth-navigation correction — 2026-10-20
+
+A fresh review recovered the existing pushed Issue #4 branch instead of duplicating its implementation. GitHub Issues #1–#3 are CLOSED/COMPLETED, public PRs #27–#29 are merged, and the complete public backlog still contains 26 issues: #4–#22 are the 19 open required MVP issues, with #23–#26 excluded. The feature branch remains unmerged.
+
+**Observed defect:** sign in as the demo user, begin a delayed Backend selection, use browser Back to visit the signed-in Login page, and continue to Dashboard before the write completes. The old route-layout provider unmounted; the service eventually stored Backend but the new Dashboard permanently displayed Frontend and 25%. A controlled deferred promise reproduced the behavior without timing-dependent sleeps. The new test initially failed with missing save confirmation; it is not counted as a passing baseline check.
+
+**Correction:** keep the account-keyed CareerProvider mounted across every route. Auth forms render in a sibling Routes group so changing accounts still resets career state without remounting signup/login success UI. Explicit null route matches prevent duplicate content. Pending write serialization, service ownership guards and account isolation remain intact. The independent reviewer approved the correction with no further blocking findings.
+
+**Files changed in this follow-up:** frontend/src/App.tsx, frontend/e2e/career-dashboard.spec.ts, _docs/career-dashboard.md, _docs/issue-4-pr.md, _docs/issue-4-qa.md and _docs/development-progress.md.
+
+Executed from frontend with Node 24.19.0/npm 11.9.0 and system Chromium 154.0.8037.57:
+
+| Command | Actual result |
+| --- | --- |
+| New deferred-write browser test before the fix | 1 failed as expected; exit 1; stale-navigation reproduction |
+| Targeted browser regression plus signup/login/logout and account isolation after the fix | 3 passed; exit 0 |
+| npm run build | PASS; exit 0; TypeScript + Vite, 1,957 modules |
+| npm run lint | PASS; exit 0 |
+| npm run test | 122 passed / 0 failed / 0 skipped in 6 files; exit 0 |
+| PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e | 33 passed / 0 failed / 0 skipped; 31.1s; exit 0 |
+
+All required frontend regression checks pass after the fix. Human screen-reader/Firefox/Safari checks remain unrun; backend/persistence/integration stages remain unimplemented. This is **READY FOR REVIEW**, not a merged or completed Issue #4.
+
+The API blocker was diagnosed at the HTTPS CONNECT layer: api.github.com returns HTTP 403 before authentication is evaluated. The additive api.github.com allowlist requirement was saved in the environment configuration draft; saving alone does not apply it. Existing Git read/push authentication must be reused after settings are applied. See development-progress.md for PR recovery and the dependency-gated continuation.
