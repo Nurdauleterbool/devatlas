@@ -18,23 +18,44 @@ Scope: [MVP-01: Scaffold frontend and design system](https://github.com/Nurdaule
 
 `src/main.tsx` and `src/services/mockService.ts` are unchanged. No backend, authentication, persistence or unrelated product feature was added. The fetched baseline already passed build/lint; no pre-existing compilation failure is claimed. The missing Input/Dialog and unused Career Paths route were the scaffold gaps completed here.
 
-## Verification
+## Final QA verification
 
-Run from `/workspace/devatlas/frontend` on 2026-10-20 with Node.js 24.19.0, npm 11.9.0 and system Chromium 154.0.8037.57:
+Verified application code commit `792b1d0` from `/workspace/devatlas/frontend` on 2026-10-20 with Node.js 24.19.0, npm 11.9.0 and system Chromium 154.0.8037.57. The working tree was clean before verification. No application or test code was changed during this final QA pass.
 
 | Command/check | Result |
 | --- | --- |
-| `npm ci --cache /workspace/.npm` | Exit 0; 53 packages installed using the updated lockfile |
-| `npm run build` | Exit 0; TypeScript check and Vite production build completed, 1936 modules transformed |
-| `npm run lint` | Exit 0; no lint errors or warnings |
-| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | 11 passed; no failed, skipped or disabled tests |
-| Development server | Started successfully; exercised through actual Chromium navigation and requests |
-| Visual inspection | Reviewed screenshots of the desktop Dashboard (1440px), mobile Career Paths and open drawer (375px); dark design retained |
+| `npm run build` | **PASS**, exit 0; TypeScript check and Vite production build actually completed, 1936 modules transformed. No errors. This command is not a test suite. |
+| `npm run lint` | **PASS**, exit 0; lint actually executed, no errors or warnings. This command is not a test suite. |
+| `npx playwright test` — initial invocation without browser configuration | **FAIL / environment blocked**, exit 1; runner reported 0 passed, 11 failed during browser launch. Application test bodies did not execute because the bundled Chromium executable was absent. |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test` — corrected environment | **PASS**, exit 0; 11 tests actually executed and passed in 12.4s, 0 failed, 0 skipped. No uncaught browser runtime errors. |
+| Development server | Started by Playwright and exercised through actual Chromium navigation and requests in the successful rerun |
 | `git diff --check` | Exit 0; no whitespace errors |
+
+The exact error repeated for all 11 cases in the unconfigured invocation was:
+
+```text
+Error: browserType.launch: Executable doesn't exist at /home/agent/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell
+```
+
+This was a browser-installation limitation, not an application assertion failure. The existing `playwright.config.ts` already supports `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; selecting the installed `/usr/bin/chromium` resolved it without changing application code, assertions or test configuration. To reproduce this environment's successful run, export that variable before `npx playwright test`. Alternatively install Playwright's Chromium as described in the frontend README.
+
+Raw final-QA runner logs in this workspace: `/tmp/devatlas-final-playwright-default.log` (blocked invocation) and `/tmp/devatlas-final-playwright-system.log` (successful rerun).
 
 The browser suite checks Dashboard fixtures and selection; all five direct routes and active links; page-not-found recovery; skip-link and route focus; mobile keyboard navigation at 320px/375px; Tab/Shift+Tab wrapping; Escape/backdrop/close-button dismissal; focus/scroll restoration; desktop resize; loading/empty/error states on Dashboard and Career Paths; missing-default-career fallback; input labels/descriptions/errors/required/disabled state; button form semantics; dialog accessible name/description; and uncaught browser runtime errors.
 
-An initial run exposed missing deterministic Tab wrapping in Chromium's native dialog behavior. Explicit focus wrapping fixed it; the final suite above includes this regression. Browser launch emits a runner warning about `NO_COLOR`/`FORCE_COLOR`; this is separate from application lint/runtime diagnostics.
+During implementation, an earlier run exposed missing deterministic Tab wrapping in Chromium's native dialog behavior. Explicit focus wrapping fixed it; the final suite above includes this regression. Browser launch emits `Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.` This runner warning is separate from application lint/runtime diagnostics and did not block execution.
+
+Historical setup evidence, not repeated during this final QA pass: `npm ci --cache /workspace/.npm` installed 53 packages with exit 0; screenshots of the desktop Dashboard (1440px), mobile Career Paths and open drawer (375px) were reviewed during implementation and retained the dark design.
+
+## Git status and review delivery
+
+- Implementation changes are committed as `792b1d0` on `feat/issue-1-frontend-scaffold`. `git ls-remote` confirmed this exact commit on the remote branch. The changed-file inventory is recorded above; `git diff --name-status 8c2a23e..792b1d0` lists 20 files.
+- This final QA pass changes only `_docs/issue-1-qa.md`; no frontend source, test, manifest or lockfile changes were required.
+- The remote `main` ref was verified at `8c2a23e78e25f33c6027608d829dbbb433b5783f` and was not modified by this work.
+- **No GitHub Pull Request exists at the time of verification.** The public GitHub pull-request dashboard, both unfiltered and filtered for this branch, reported 0 open and 0 closed results and no PR links. `gh pr list --repo Nurdauleterbool/devatlas --head feat/issue-1-frontend-scaffold --state all --json number,url,state,headRefName` could not query the API: `Post "https://api.github.com/graphql": Forbidden`.
+- The implementation branch is already pushed; branch publication is distinct from PR creation. Next step: [create a Pull Request](https://github.com/Nurdauleterbool/devatlas/pull/new/feat/issue-1-frontend-scaffold) targeting `main` from `feat/issue-1-frontend-scaffold`. A prepared description is available at `/tmp/devatlas-issue-1-pr.md` in this workspace.
+
+Recommendation: **READY FOR REVIEW**. Build, lint and all 11 actual Chromium tests pass with the documented system-browser setting. PR creation remains outstanding; the manual cross-browser and assistive-technology checks below remain unexecuted and should be completed during review before approval.
 
 ## Manual QA checklist for review
 
