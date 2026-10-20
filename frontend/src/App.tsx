@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react'
-import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import {
   Compass,
   Menu,
@@ -91,60 +91,67 @@ export default function App() {
         </header>
 
         <main id="main-content" ref={mainRef} tabIndex={-1}>
+          {/* Keep pending career writes alive across same-account auth-route visits.
+              Auth forms remain siblings so account changes preserve their state. */}
+          <CareerProvider key={dataKey} service={service} signedIn={!!session}>
+            <Routes>
+              <Route path="/login" element={null} />
+              <Route path="/signup" element={null} />
+              <Route
+                path="/"
+                element={<DashboardPage />}
+              />
+
+              <Route
+                path="/careers"
+                element={<CareerPathsPage key={dataKey} />}
+              />
+
+              <Route
+                path="/graph"
+                element={
+                  <PlaceholderPage
+                    title="Skill Graph"
+                    description="Explore skill dependencies and discover what to learn next."
+                  />
+                }
+              />
+
+              <Route
+                path="/learning"
+                element={
+                  <PlaceholderPage
+                    title="Learning"
+                    description="Access learning resources, practice exercises and quizzes."
+                  />
+                }
+              />
+
+              <Route
+                path="/analytics"
+                element={
+                  <PlaceholderPage
+                    title="Analytics"
+                    description="Track skill progress, quiz scores and learning history."
+                  />
+                }
+              />
+
+              <Route
+                path="*"
+                element={
+                  <PlaceholderPage
+                    title="Page not found"
+                    description="This page does not exist."
+                  />
+                }
+              />
+            </Routes>
+          </CareerProvider>
           <Routes>
-            <Route element={<CareerProvider key={dataKey} service={service} signedIn={!!session}><Outlet /></CareerProvider>}>
-            <Route
-              path="/"
-              element={<DashboardPage />}
-            />
-
-            <Route
-              path="/careers"
-              element={<CareerPathsPage key={dataKey} />}
-            />
-
-            <Route
-              path="/graph"
-              element={
-                <PlaceholderPage
-                  title="Skill Graph"
-                  description="Explore skill dependencies and discover what to learn next."
-                />
-              }
-            />
-
-            <Route
-              path="/learning"
-              element={
-                <PlaceholderPage
-                  title="Learning"
-                  description="Access learning resources, practice exercises and quizzes."
-                />
-              }
-            />
-
-            <Route
-              path="/analytics"
-              element={
-                <PlaceholderPage
-                  title="Analytics"
-                  description="Track skill progress, quiz scores and learning history."
-                />
-              }
-            />
-
-            <Route
-              path="*"
-              element={
-                <PlaceholderPage
-                  title="Page not found"
-                  description="This page does not exist."
-                />
-              }
-            />
-            </Route>
             <Route path="/login" element={<AuthPage key="login" mode="login" />} />
             <Route path="/signup" element={<AuthPage key="signup" mode="signup" />} />
+            <Route path="*" element={null} />
           </Routes>
         </main>
       </div>

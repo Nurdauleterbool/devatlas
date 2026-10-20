@@ -222,3 +222,35 @@ test('pending latest selection finishes while visiting another application route
   await expect(page.getByRole('status')).toContainText('Career selection saved')
   await expect(overview(page)).toContainText('Data Analyst')
 })
+
+test('pending selection reconciles after browser Back through the signed-in login page',async({page})=>{
+  await demo(page)
+  await page.evaluate(async()=>{
+    const modulePath='/src/services/index.ts'
+    const {service}=await import(modulePath)
+    const original=service.setSelectedCareers.bind(service)
+    const gate = new Promise<void>((resolve)=>{
+      Object.assign(window,{releaseCareerWrite:resolve})
+    })
+    service.setSelectedCareers=async(ids:string[])=>{
+      await gate
+      return original(ids)
+    }
+  })
+  await page.getByRole('button',{name:'Choose Backend Developer',exact:true}).click()
+  await expect(page.getByRole('status')).toContainText('Saving your career selection')
+  await page.goBack()
+  await expect(page).toHaveURL('/login')
+  // Account forms stay outside the keyed workspace, retaining their success UI.
+  await expect(page.getByRole('status')).toContainText('Signed in as Demo Student.')
+  await page.getByRole('link',{name:'Continue to Dashboard'}).click()
+  await expect(overview(page)).toContainText('Frontend Developer')
+  await page.evaluate(()=>{
+    (window as Window & {releaseCareerWrite:()=>void}).releaseCareerWrite()
+  })
+  await expect(page.getByRole('status')).toContainText('Career selection saved')
+  await expect(overview(page)).toContainText('Backend Developer')
+  await expect(overview(page)).toContainText('0 of 4 unique skills completed')
+  await page.getByRole('button',{name:'Choose Data Analyst',exact:true}).click()
+  await expect(overview(page)).toContainText('Data Analyst')
+})

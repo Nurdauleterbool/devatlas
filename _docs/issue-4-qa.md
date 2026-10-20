@@ -79,3 +79,29 @@ Mock accounts, sessions, selections and progress reset on full reload. No server
 The complete frontend regression was rerun on implementation commit `4dfd4c5`: build PASS (1,957 modules), lint PASS (no lint errors/warnings), Vitest 122 passed / 0 failed / 0 skipped across 6 files, Playwright 32 passed / 0 failed / 0 skipped in 30.1s using system Chromium. All commands exited 0. No new application changes or defects were identified in this follow-up; only progress/publication documentation changed afterward.
 
 GitHub Issues #1–#3 are closed and PRs #27–#29 are actually merged. Issue #4 remains open, its branch is pushed, and public branch-filtered PR search returns no PR. A fresh `gh pr create` attempt failed with `Post "https://api.github.com/graphql": Forbidden`; merge/closure were not attempted without a PR. The next implementation (#5) depends on #4, and all later required issues depend on it transitively. The whole MVP is not release-ready. See [development progress](development-progress.md) for the exact recovery steps and [prepared PR body](issue-4-pr.md) for manual publication. Issue #4 remains **READY FOR REVIEW / INTEGRATION BLOCKED**, not completed.
+
+
+## Independent QA and auth-navigation correction — 2026-10-20
+
+A fresh review recovered the existing pushed Issue #4 branch instead of duplicating its implementation. GitHub Issues #1–#3 are CLOSED/COMPLETED, public PRs #27–#29 are merged, and the complete public backlog still contains 26 issues: #4–#22 are the 19 open required MVP issues, with #23–#26 excluded. The feature branch remains unmerged.
+
+**Observed defect:** sign in as the demo user, begin a delayed Backend selection, use browser Back to visit the signed-in Login page, and continue to Dashboard before the write completes. The old route-layout provider unmounted; the service eventually stored Backend but the new Dashboard permanently displayed Frontend and 25%. A controlled deferred promise reproduced the behavior without timing-dependent sleeps. The new test initially failed with missing save confirmation; it is not counted as a passing baseline check.
+
+**Correction:** keep the account-keyed CareerProvider mounted across every route. Auth forms render in a sibling Routes group so changing accounts still resets career state without remounting signup/login success UI. Explicit null route matches prevent duplicate content. Pending write serialization, service ownership guards and account isolation remain intact. The independent reviewer approved the correction with no further blocking findings.
+
+**Files changed in this follow-up:** frontend/src/App.tsx, frontend/e2e/career-dashboard.spec.ts, _docs/career-dashboard.md, _docs/issue-4-pr.md, _docs/issue-4-qa.md and _docs/development-progress.md.
+
+Executed from frontend with Node 24.19.0/npm 11.9.0 and system Chromium 154.0.8037.57:
+
+| Command | Actual result |
+| --- | --- |
+| New deferred-write browser test before the fix | 1 failed as expected; exit 1; stale-navigation reproduction |
+| Targeted browser regression plus signup/login/logout and account isolation after the fix | 3 passed; exit 0 |
+| npm run build | PASS; exit 0; TypeScript + Vite, 1,957 modules |
+| npm run lint | PASS; exit 0 |
+| npm run test | 122 passed / 0 failed / 0 skipped in 6 files; exit 0 |
+| PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e | 33 passed / 0 failed / 0 skipped; 31.1s; exit 0 |
+
+All required frontend regression checks pass after the fix. Human screen-reader/Firefox/Safari checks remain unrun; backend/persistence/integration stages remain unimplemented. This is **READY FOR REVIEW**, not a merged or completed Issue #4.
+
+The API blocker was diagnosed at the HTTPS CONNECT layer: api.github.com returns HTTP 403 before authentication is evaluated. The additive api.github.com allowlist requirement was saved in the environment configuration draft; saving alone does not apply it. Existing Git read/push authentication must be reused after settings are applied. See development-progress.md for PR recovery and the dependency-gated continuation.

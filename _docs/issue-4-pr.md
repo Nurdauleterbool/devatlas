@@ -5,7 +5,7 @@ Related to #4. Based on main `2fd8a8a`, after Issue #3 merged in PR #29. Close t
 ## Changes
 
 - Reuse existing service methods, fixtures, roadmap composition and UI components. No backend, database, API contract or dependencies added.
-- Add shared selection cards and a session-scoped confirmed response cache. Serialize/coalesce rapid writes, ignore stale responses, preserve background saves across application navigation and provide read/write/refresh retry states.
+- Add shared selection cards and a session-scoped confirmed response cache. Serialize/coalesce rapid writes, ignore stale responses, preserve background saves across all same-account route navigation, including browser Back through auth pages and provide read/write/refresh retry states.
 - Deduplicate shared skills and recommendations; retain adapter-authored reasons and consume analytics for per-path summaries. Completion and practice quiz verification remain separate.
 - Preserve public previews, all existing routes, mock auth, mobile navigation and keyboard accessibility.
 - Document decisions, changed files, QA evidence and the continuation checkpoint under `_docs/`.
@@ -19,9 +19,9 @@ Full suites rerun from frontend on 2026-10-20; all exit codes 0:
 | `npm run build` | PASS — TypeScript + Vite, 1,957 modules |
 | `npm run lint` | PASS — no lint errors/warnings |
 | `npm run test` | PASS — 122 passed, 0 failed/skipped, 6 files |
-| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | PASS — 32 passed, 0 failed/skipped, 30.1s |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | PASS — 33 passed, 0 failed/skipped, 31.1s |
 
-All nine prior auth tests pass unchanged. Responsive/keyboard checks cover 320, 375, 768 and 1280 px. See `_docs/issue-4-qa.md` for implementation evidence and a human reviewer checklist, and `_docs/development-progress.md` for actual issue/merge status and dependency gates.
+The new delayed-write/browser-Back regression failed before the lifecycle fix and passes afterward. All nine prior auth tests pass unchanged. Responsive/keyboard checks cover 320, 375, 768 and 1280 px. See `_docs/issue-4-qa.md` for implementation evidence and a human reviewer checklist, and `_docs/development-progress.md` for actual issue/merge status and dependency gates.
 
 ## Limits
 
