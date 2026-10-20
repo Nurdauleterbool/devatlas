@@ -47,7 +47,7 @@ Fixture validation checks IDs, references, dependency cycles, quiz structure/key
 
 Valid self-assessment values are `not_started`, `learning`, `completed`. All transitions are allowed because a student can report existing knowledge; prerequisites determine recommendations, not whether someone can self-assess a skill. Actual status changes append a timestamped history event. Setting the current status again does not create an event.
 
-Verification is derived from a passed quiz attempt and is independent of self-assessment. `bestQuizScore` is the maximum across retained attempts, or `null` without attempts. Resetting a status or failing a later retake does not erase verification or a previous best score. `updatedAt` reflects the latest status/attempt timestamp.
+Verification means the user passed a DevAtlas practice quiz; it is not professional certification. It is independent of self-assessment. `bestQuizScore` is the maximum across retained attempts, or `null` without attempts. Resetting a status or failing a later retake does not erase verification or a previous best score. `updatedAt` reflects the latest status/attempt timestamp.
 
 Submissions must contain exactly one valid response per question, with unique question IDs and option IDs belonging to those questions. The service computes scores; it rejects partial, duplicate, foreign or forged submissions without writing an attempt. Passing requires at least 80% correct. Every valid retake is stored, including failures. Explanations and correct option IDs appear in the submission result, never in `getQuizForSkill()`.
 
@@ -89,7 +89,7 @@ npm ci
 npm run build
 npm run lint
 npm run test
-PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
 Use `npx playwright install chromium` and omit the executable override when using Playwright's browser. Vitest uses Node, fake timers for latency, fresh service instances for state isolation, and no extra DOM environment dependency. The browser suite exercises the actual configured mock scenarios and retains the existing route, accessibility, selection and component checks. Exact execution results and limitations are recorded in [Issue #2 QA evidence](issue-2-qa.md).

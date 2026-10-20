@@ -239,6 +239,32 @@ describe('quiz grading and attempts', () => {
 })
 
 describe('analytics and deterministic recommendations', () => {
+  it('replays the same progress and quiz workflow with identical IDs, timestamps and derived data', async () => {
+    async function replay(service: DevAtlasService) {
+      await service.updateProgress({ skillId: 'sql', status: 'learning' })
+      await service.submitQuizAttempt(answers('sql', 4))
+      await service.submitQuizAttempt(answers('sql', 1))
+      await service.setSelectedCareers(['backend', 'analyst'])
+      return {
+        progress: await service.getProgress(),
+        history: await service.getProgressHistory(),
+        attempts: await service.getQuizAttempts('quiz-sql'),
+        selections: await service.getSelectedCareers(),
+        recommendations: await service.getRecommendations('backend'),
+        analytics: await service.getAnalytics(),
+      }
+    }
+    const first = await replay(makeService())
+    const second = await replay(makeService())
+    expect(second).toEqual(first)
+    expect(first.attempts.map((attempt) => attempt.score)).toEqual([80, 20])
+    expect(first.progress.find((item) => item.skillId === 'sql')).toMatchObject({
+      status: 'learning', verified: true, bestQuizScore: 80, updatedAt: NOW,
+    })
+    expect(first.recommendations.map((item) => item.skillId)).toEqual(['python', 'databases'])
+    expect(first.selections.map((selection) => selection.selectedAt)).toEqual([NOW, NOW])
+  })
+
   it('counts unique skills, current-user attempts and seeded history', async () => {
     const summary = await makeService().getAnalytics()
     expect(summary).toMatchObject({

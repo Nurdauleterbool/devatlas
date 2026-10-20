@@ -44,6 +44,7 @@ export interface SkillProgressRecord {
 
 /** Verification and best score are derived from attempts, not editable status. */
 export interface UserSkillProgress extends SkillProgressRecord {
+  /** Passed a DevAtlas practice quiz; this is not a professional certification. */
   verified: boolean
   bestQuizScore: number | null
 }

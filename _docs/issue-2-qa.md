@@ -4,7 +4,7 @@ Scope: [MVP-02: Create typed mockService and seed fixtures](https://github.com/N
 
 ## Changes and acceptance evidence
 
-- `frontend/src/types/domain.ts`: shared types for users, careers, skills/dependencies, user selections, progress/history, resources/tasks, quizzes/responses/results/attempts, analytics and recommendations. Shared skill definitions contain no user status.
+- `frontend/src/types/domain.ts`: shared types for users, careers, skills/dependencies, user selections, progress/history, resources/tasks, quizzes/responses/results/attempts, analytics and recommendations. Shared skill definitions contain no user status. Verification explicitly means passing a DevAtlas practice quiz, not professional certification.
 - `frontend/src/services/DevAtlasService.ts` and `services/index.ts`: session-scoped asynchronous interface, typed errors, and a single replaceable application binding. No frontend page imports fixtures or the mock implementation.
 - `frontend/src/services/fixtures/`: deterministic data for all three careers, 10 unique skills, shared Python/SQL definitions, acyclic prerequisites, free resources, practical tasks, 10 five-question quizzes, two users and coherent per-user histories/attempts. Fixture validation rejects invalid references, cycles, grading data and ownership.
 - `frontend/src/services/mockService.ts`: isolated in-memory state; asynchronous reads, selected-career replacement, progress/history updates and quiz submission. Validates inputs before mutations, retains retakes/best scores, derives verification and analytics, and generates deterministic explained recommendations. Ownership comes from the mock session, never from mutation input.
@@ -16,24 +16,58 @@ Scope: [MVP-02: Create typed mockService and seed fixtures](https://github.com/N
 
 No backend, OpenAPI specification, authentication flow, SQLite persistence or unrelated page feature was implemented. Existing UI components/sidebar/styles and Issue #1 QA history are unchanged.
 
+## Changed files relative to main
+
+```text
+README.md
+_docs/architecture.md
+_docs/issue-2-qa.md
+_docs/mock-service.md
+frontend/README.md
+frontend/e2e/scaffold.spec.ts
+frontend/package-lock.json
+frontend/package.json
+frontend/src/App.tsx
+frontend/src/hooks/useCareerRoadmaps.ts
+frontend/src/pages/CareerPathsPage.tsx
+frontend/src/services/DevAtlasService.ts
+frontend/src/services/__tests__/careerRoadmaps.test.ts
+frontend/src/services/__tests__/fixtures.test.ts
+frontend/src/services/__tests__/mockConfig.test.ts
+frontend/src/services/__tests__/mockService.test.ts
+frontend/src/services/careerRoadmaps.ts
+frontend/src/services/fixtures/catalog.ts
+frontend/src/services/fixtures/index.ts
+frontend/src/services/fixtures/quizzes.ts
+frontend/src/services/fixtures/validateFixtures.ts
+frontend/src/services/index.ts
+frontend/src/services/mockConfig.ts
+frontend/src/services/mockService.ts
+frontend/src/types/domain.ts
+frontend/vitest.config.ts
+```
+
 ## Verified commands
 
 Executed from `/workspace/devatlas/frontend` on 2026-10-20 with Node.js 24.19.0, npm 11.9.0, Vitest 5.0.5 and Chromium 154.0.8037.57:
 
 | Command | Outcome | Execution evidence |
 | --- | --- | --- |
-| `npm ci --cache /workspace/.npm` | **PASS**, exit 0 | 71 packages installed from the updated lockfile |
 | `npm run build` | **PASS**, exit 0 | TypeScript check and Vite build completed; 1945 modules transformed |
 | `npm run lint` | **PASS**, exit 0 | No lint errors or warnings |
-| `npm run test` | **PASS**, exit 0 | 4 test files, **73 passed, 0 failed, 0 skipped**; actual Vitest execution, 1.00s |
-| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npx playwright test` | **PASS**, exit 0 | **11 passed, 0 failed, 0 skipped**; actual Chromium execution, 16.5s; no uncaught page runtime errors |
+| `npm run test` | **PASS**, exit 0 | 4 test files, **74 passed, 0 failed, 0 skipped**; actual Vitest execution, 1.61s |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e` | **PASS**, exit 0 | **11 passed, 0 failed, 0 skipped**; actual Chromium execution, 26.5s; no uncaught page runtime errors |
 | `git diff --check` | **PASS**, exit 0 | No whitespace errors |
+
+All four requested commands were rerun after adding the workflow reproducibility regression. Dependencies were previously installed successfully with `npm ci --cache /workspace/.npm` (71 packages); no dependency changes were needed for this final pass.
 
 No required checks are unrun or blocked. The documented executable override uses the browser installed in this cloud environment; an unconfigured bundled-browser run was not performed for Issue #2. Playwright emits `Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.` This runner warning did not block any test and is unrelated to application lint/runtime diagnostics.
 
 ## Test coverage
 
 The four Vitest files cover fixture integrity and corrupt-fixture rejection; asynchronous read contracts and optional lookups; per-user progress/attempt/history isolation; defensive copies and fresh-instance resets; reversible/idempotent progress changes; atomic validation failures and forged fields; career replacement/clearing; injected clocks and latency; pending input snapshots; quiz answer redaction, exact 80% threshold, invalid/partial/duplicate/foreign submissions, unlimited retained retakes and best score; independent verification; unique-skill and per-career analytics; prerequisite-aware, stable recommendations; empty/error/per-method scenarios; development/production configuration; and adapter-independent roadmap composition.
+
+The reproducibility regression runs the same progress update, passing/failed quiz attempts, and career selection against two fresh adapters with the same injected clock. It compares IDs, timestamps, progress/history, retained attempts, selections, recommendations and analytics, and verifies that the best score remains 80 after a 20-point retake.
 
 The 11 browser tests verify the existing Dashboard/career interactions, all five routes and page-not-found recovery, keyboard skip/route focus, mobile navigation at 320px/375px, Tab/Shift+Tab wrapping, Escape/backdrop/close-button dismissal, focus/scroll restoration, desktop resize, real mock latency/empty/error UI states, fallback selection, and Input/Dialog accessibility semantics.
 
