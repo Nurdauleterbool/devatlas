@@ -4,15 +4,15 @@ Verified snapshot: **2026-10-20, Asia/Qyzylorda**. This records observed GitHub/
 
 ## Current checkpoint
 
-- Issues #1–#4 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) and [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) are merged.
+- Issues #1–#5 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) and [#31](https://github.com/Nurdauleterbool/devatlas/pull/31) are merged.
 - Issue #4 merged as `1591dbd31fee1f827f322ecc81cfaab7006ed051`; its final implementation `eb2720e43377c65616c63b7782c00a78df1b5a1a` was verified as an ancestor of fetched origin/main before QA closed the issue.
 - GitHub API access now works using the existing injected authentication. The earlier network blocker is resolved by observed successful PR creation, merge and issue closure. No token was requested or copied.
-- Issue #5 is in progress on `feat/issue-5-skill-graph`, based on the fetched #4 merge. Required MVP: **22 issues**, **4 closed**, **18 open (#5–#22)**. Post-MVP #23–#26 remain excluded.
+- Issue #5 merged as 737dab91c66ca0b6ee90741a29e00122ecee9b3d and closed after verifying implementation c4344bb in main. Issue #6 is implemented and awaiting integration on feat/issue-6-skill-details. Required MVP: **22 issues**, **5 closed**, **17 open (#6–#22)**. Post-MVP #23–#26 remain excluded.
 - The full MVP remains under development; backend, persistence and HTTP integration are later stages.
 
 ## Live backlog and dependencies
 
-The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #5 is dependency-ready after #4 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
+The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #6 is dependency-ready after #5 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
 
 | Issue | Stage | Direct dependencies | Verified status |
 | --- | --- | --- | --- |
@@ -20,8 +20,8 @@ The full descriptions, acceptance criteria, labels and dependencies were read fr
 | [#2](https://github.com/Nurdauleterbool/devatlas/issues/2) — Create typed mockService and seed fixtures | Mock frontend | #1 | CLOSED; merged PR #28 |
 | [#3](https://github.com/Nurdauleterbool/devatlas/issues/3) — Build registration/login UI and states | Mock frontend | #1, #2 | CLOSED; merged PR #29 |
 | [#4](https://github.com/Nurdauleterbool/devatlas/issues/4) — Build career selection and dashboard UI | Mock frontend | #1, #2, #3 | CLOSED; merged PR #30 |
-| [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | OPEN; implementation in progress |
-| [#6](https://github.com/Nurdauleterbool/devatlas/issues/6) — Build skill detail and resources UI | Mock frontend | #2, #5 | OPEN; dependency blocked |
+| [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | CLOSED; merged PR #31 |
+| [#6](https://github.com/Nurdauleterbool/devatlas/issues/6) — Build skill detail and resources UI | Mock frontend | #2, #5 | OPEN; implemented, awaiting integration |
 | [#7](https://github.com/Nurdauleterbool/devatlas/issues/7) — Build quiz and results UI | Mock frontend | #2, #6 | OPEN; dependency blocked |
 | [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | OPEN; dependency blocked |
 | [#9](https://github.com/Nurdauleterbool/devatlas/issues/9) — Specify OpenAPI contract and example payloads | API contract | #2, #3, #4, #5, #6, #7, #8 | OPEN; dependency blocked |
@@ -64,7 +64,7 @@ System Chromium 154.0.8037.57 was used. All suites actually executed; no environ
 
 The earlier api.github.com CONNECT/403 blocker is resolved: PR #30 was created, its state was checked as MERGEABLE/CLEAN with no configured checks, and the independently reviewed, fully tested exact head was merged without bypassing protections. Only afterward was #4 closed through the API. Existing GitHub authentication supports the requested operations.
 
-Current development: #5 interactive React Flow graph, using existing typed career roadmaps. After its acceptance criteria and full regression pass, commit/push a separate PR, verify merge gates, merge, confirm the implementation in main, and only then close #5. Next is #6 skill details/resources/status controls. Continue the dependency table above, recording actual test counts and PR/issue states after each integration. No post-MVP implementation is authorized.
+Current development: #6 skill details/resources/status controls. Its 200 unit and 51 browser tests, build and lint pass; independent QA approved the two corrected save races. All 10 curated resource URLs now return HTTP 200. After its verified merge/closure, continue with #7 quiz/results UI, then #8 analytics before contract #9. Keep separate PRs and verified issue closure. No post-MVP implementation is authorized.
 
 ## Completed issue evidence
 
@@ -73,8 +73,15 @@ Current development: #5 interactive React Flow graph, using existing typed caree
 | #4 — Career selection and Dashboard | PR #30 MERGED; Issue CLOSED after verification | Service-backed selection/dashboard; auth-route pending-save race fixed in App.tsx with a failing-before/passing-after browser regression; full file list and corrections in issue-4-qa.md | Build/lint PASS; 122 unit and 33 browser tests PASS; independent QA approved | #5 |
 
 
-## Issue #5 — implementation awaiting integration
+## Issue #5 — completed
 
 Interactive React Flow prerequisite graph with all three career paths, five labelled skill states, missing-prerequisite explanations, zoom/pan/fit, matching detail modal and keyboard skill list. Graph exploration preserves saved choices. See issue-5-qa.md for all files and corrections.
 
-Executed checks: build/lint PASS; 141 unit tests PASS (7 files); final full Chromium suite 40 PASS / 0 failed / 0 skipped in 40.6s, including all prior 33 scenarios and seven new graph scenarios. Nineteen new model tests pass. Independent QA approved. Early Vite reload interruption and small-control sizing were corrected and documented; no tests were disabled. Next dependency-ready issue after verified merge/closure is #6.
+Executed checks: build/lint PASS; 141 unit tests PASS (7 files); final full Chromium suite 40 PASS / 0 failed / 0 skipped in 40.6s, including all prior 33 scenarios and seven new graph scenarios. Nineteen new model tests pass. Independent QA approved. Early Vite reload interruption and small-control sizing were corrected and documented; no tests were disabled. PR #31 is MERGED, commit c4344bb is present in fetched main, and #5 was closed only afterward. Next is #6.
+
+
+## Issue #6 — implementation awaiting integration
+
+Shared full skill detail in graph/standalone routes, Learning catalogue, safe free resources, practice, prerequisite navigation, quiz entry and user-specific status updates. Fixed stale reopened details and out-of-order progress saves; confirmed data updates preserve unsaved drafts. Complete file list and corrections: issue-6-qa.md.
+
+Build/lint PASS; 200 unit tests PASS in 9 files; 51 Chromium browser tests PASS / 0 failed/skipped in 54.8s. Eleven new browser cases cover resources, navigation, status/graph/dashboard propagation, user isolation, duplicate/error/retry behavior, 320–1280px layout and three deterministic mutation regressions. All 10 external resource HEAD requests returned HTTP 200. Independent QA approved. Next is #7 after merge/closure.

@@ -51,7 +51,7 @@ test('keyboard skill list opens a modal, traps focus and restores the opener', a
   await page.keyboard.press('Enter')
   const dialog = page.getByRole('dialog', { name: 'CSS details', exact: true })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByRole('button', { name: 'Close CSS details', exact: true })).toBeFocused()
+  await expect(dialog.getByRole('heading', { name: 'CSS', exact: true })).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(opener).toBeFocused()
 })

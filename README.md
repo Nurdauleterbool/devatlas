@@ -21,7 +21,8 @@ Open the address printed by Vite. To serve on a specific interface, use `npm run
 | `/` — Dashboard | Personal selected paths, unique-skill progress, completion/verification, skill gaps and explained recommendations |
 | `/careers` — Career Paths | Service-backed single/multiple path selection, skill roadmaps, prerequisites and progress |
 | `/graph` — Skill Graph | Interactive React Flow prerequisite graph, career switching, five skill states and keyboard-accessible skill details |
-| `/learning` — Learning | Placeholder |
+| `/learning` — Learning | Ten unique skills with free resources, practice exercises and personal status controls |
+| `/skills/:skillId` — Skill details | Prerequisites, safe resource links, practice and quiz entry |
 | `/analytics` — Analytics | Placeholder |
 | `/login`, `/signup` — Account | Accessible mock login, registration, demo sign-in and session states |
 

@@ -9,9 +9,9 @@ import { useCareers } from '../careers/careerContext'
 import { CareerFeedback } from '../components/CareerSelection'
 import Button from '../components/ui/Button'
 import Dialog from '../components/ui/Dialog'
+import SkillDetails from '../components/SkillDetails'
 import { buildSkillGraph } from '../services/skillGraph'
 import type { SkillGraphData, SkillGraphStatus } from '../services/skillGraph'
-import type { SkillStatus } from '../types/domain'
 
 const statusLabels: Record<SkillGraphStatus, string> = {
   completed: 'Completed',
@@ -27,12 +27,6 @@ const statusStyles: Record<SkillGraphStatus, string> = {
   available: 'border-indigo-400/70 bg-indigo-950 text-indigo-200',
   locked: 'border-slate-500 bg-slate-900 text-slate-300',
   verified: 'border-cyan-300/70 bg-cyan-950 text-cyan-100',
-}
-
-const assessmentLabels: Record<SkillStatus, string> = {
-  not_started: 'Not started',
-  learning: 'Learning',
-  completed: 'Completed',
 }
 
 type GraphNode = Node<SkillGraphData, 'skill'>
@@ -160,15 +154,9 @@ export default function SkillGraphPage() {
     </>}
     <Dialog open={!!selected && !!selectedNode} onClose={() => setSelectedId(null)} title={`${selected?.name ?? 'Skill'} details`}>
       {selected && selectedNode && <>
-        <p className="leading-7 text-slate-300">{selected.description}</p>
-        <dl className="mt-5 space-y-3 text-sm">
-          <div><dt className="font-semibold text-slate-200">Learning state</dt><dd className="mt-1 text-slate-400">{statusLabels[selectedNode.data.status]}</dd></div>
-          <div><dt className="font-semibold text-slate-200">Self-assessment</dt><dd className="mt-1 text-slate-400">{assessmentLabels[selected.progress.status]}</dd></div>
-          <div><dt className="font-semibold text-slate-200">Practice quiz</dt><dd className="mt-1 text-slate-400">{selected.progress.verified ? 'Verified at 80% or higher' : 'Not quiz verified'}</dd></div>
-        </dl>
-        <h3 className="mt-6 font-semibold">Prerequisites</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{selected.prerequisites.length ? selected.prerequisites.map((skill) => skill.name).join(', ') : 'No prerequisites. You can start here.'}</p>
-        {selectedNode.data.missingPrerequisites.length > 0 && <p className="mt-4 rounded-xl border border-slate-500/50 bg-slate-900 p-3 text-sm leading-6 text-slate-300">Missing prerequisites: {selectedNode.data.missingPrerequisites.map((skill) => skill.name).join(', ')}. Complete or quiz-verify these skills to unlock the next step.</p>}
+        <p className="mb-4 text-sm text-slate-400">Learning state: {statusLabels[selectedNode.data.status]}</p>
+        {selectedNode.data.missingPrerequisites.length > 0 && <p className="mb-4 text-sm text-slate-300">Missing prerequisites: {selectedNode.data.missingPrerequisites.map((skill) => skill.name).join(', ')}.</p>}
+        <SkillDetails key={selected.id} skillId={selected.id} onNavigate={setSelectedId} />
       </>}
     </Dialog>
   </div>

@@ -44,7 +44,7 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/components/SidebarNavigation.tsx`: the five shared navigation links with `aria-current` supplied by `NavLink`.
 - `src/components/ui/`: shared Button, Card, Input and Dialog.
 - `src/pages/CareerPathsPage.tsx`: selectable career roadmaps and seeded progress.
-- `src/pages/SkillGraphPage.tsx`: React Flow graph, career selector, keyboard skill list and basic skill-detail modal.
+- `src/pages/SkillGraphPage.tsx`: React Flow graph, career selector, keyboard skill list and full shared skill-detail modal.
 - `src/services/skillGraph.ts`: deterministic graph layout/status composition from typed roadmaps, with reference/cycle validation.
 - `src/pages/PlaceholderPage.tsx`: Learning, Analytics and missing-page screens.
 - `src/types/domain.ts`: shared domain types, with catalogue skills separate from user progress.
@@ -57,7 +57,7 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/index.css`: Tailwind import, theme tokens, global keyboard focus, modal/drawer styles and reduced-motion support.
 - `e2e/`: route, mock-state and UI accessibility regression tests.
 
-Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph renders the selected career’s directed prerequisites, completion/learning/available/locked/quiz-verified states, zoom/pan controls and skill details. The graph loads as a separate route module. A native career selector and visible skill-button list provide keyboard alternatives; missing prerequisites are named. Graph browsing does not alter saved career choices. Learning and Analytics remain placeholders. Career selections come from `getSelectedCareers`, and `setSelectedCareers` persists changes across route navigation within this mock instance. Anonymous pages allow roadmap previews but require login to save choices. Signed-in pages read the current user’s progress and reset their cached workspace on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
+Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph renders the selected career’s directed prerequisites, completion/learning/available/locked/quiz-verified states, zoom/pan controls and skill details. The graph loads as a separate route module. A native career selector and visible skill-button list provide keyboard alternatives; missing prerequisites are named. Graph browsing does not alter saved career choices. Learning lists all unique skills and links /skills/:skillId to free resources, exercises and signed-in status controls. Graph details share that component. Successful changes update the shared Dashboard/graph cache; progress writes serialize across route remounts and confirmed updates preserve unsaved form choices. Analytics and quiz-taking remain later stages. Career selections come from `getSelectedCareers`, and `setSelectedCareers` persists changes across route navigation within this mock instance. Anonymous pages allow roadmap previews but require login to save choices. Signed-in pages read the current user’s progress and reset their cached workspace on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
 
 ## Mock data and UI scenarios
 
@@ -125,5 +125,7 @@ export default function GoalExample() {
 Use links for navigation and buttons for actions. On mobile (below 768px), the drawer traps Tab/Shift+Tab, closes after route selection, and closes when resized to desktop. Route changes move focus to the main content. A skip link is the first keyboard stop. Keep text labels alongside progress/status colors and preserve loading, empty and error states.
 
 ## QA
+
+Latest Issue #6 verification: build/lint pass, 200 unit and 51 Chromium browser tests pass. See [skill-detail QA](../_docs/issue-6-qa.md) for exact commands, corrections and resource reachability evidence.
 
 Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #4 QA report](../_docs/issue-4-qa.md) records current verification; [Issue #3 QA](../_docs/issue-3-qa.md) retains the auth baseline; [Issue #2 QA](../_docs/issue-2-qa.md) records the earlier service baseline; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.

@@ -15,9 +15,11 @@ import Dialog from './components/ui/Dialog'
 import AuthPage from './pages/AuthPage'
 import CareerProvider from './careers/CareerProvider'
 import DashboardPage from './pages/DashboardPage'
+import LearningPage from './pages/LearningPage'
 import { useAuth } from './auth/authContext'
 
 const SkillGraphPage = lazy(() => import('./pages/SkillGraphPage'))
+const SkillDetailPage = lazy(() => import('./pages/SkillDetailPage'))
 
 export default function App() {
   const { session } = useAuth()
@@ -116,13 +118,10 @@ export default function App() {
 
               <Route
                 path="/learning"
-                element={
-                  <PlaceholderPage
-                    title="Learning"
-                    description="Access learning resources, practice exercises and quizzes."
-                  />
-                }
+                element={<LearningPage key={dataKey} />}
               />
+              <Route path="/skills/:skillId" element={<Suspense fallback={<p role="status" className="p-6 text-slate-400">Loading skill details…</p>}><SkillDetailPage key={dataKey} /></Suspense>} />
+              <Route path="/skills/:skillId/quiz" element={<PlaceholderPage title="Skill quiz" description="This skill’s practice quiz will be available soon. Explore the learning materials in the meantime." />} />
 
               <Route
                 path="/analytics"
