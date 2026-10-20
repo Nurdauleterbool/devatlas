@@ -1,28 +1,21 @@
 
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import {
   Compass,
-  LayoutDashboard,
   Network,
-  BookOpen,
-  BarChart3,
   ArrowRight,
   Menu,
-  X,
 } from 'lucide-react'
 
 import { mockService } from './services/mockService'
 import type { CareerPath } from './services/mockService'
 import PlaceholderPage from './pages/PlaceholderPage'
-
-const navigation = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Compass, label: 'Career Paths', path: '/careers' },
-  { icon: Network, label: 'Skill Graph', path: '/graph' },
-  { icon: BookOpen, label: 'Learning', path: '/learning' },
-  { icon: BarChart3, label: 'Analytics', path: '/analytics' },
-]
+import CareerPathsPage from './pages/CareerPathsPage'
+import SidebarNavigation from './components/SidebarNavigation'
+import Button from './components/ui/Button'
+import Card from './components/ui/Card'
+import Dialog from './components/ui/Dialog'
 
 function Dashboard() {
   const [careers, setCareers] = useState<CareerPath[]>([])
@@ -98,16 +91,13 @@ function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {careers.map((career) => (
-          <article
+          <Card
             key={career.id}
-            className={`rounded-3xl border p-6 transition ${
-              selected === career.id
-                ? 'border-indigo-400 bg-indigo-500/10'
-                : 'border-white/10 bg-[#161e34] hover:border-indigo-400/50'
-            }`}
+            highlighted={selected === career.id}
+            className="transition hover:border-indigo-400/50"
           >
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400">
-              <Network size={24} />
+              <Network size={24} aria-hidden="true" />
             </div>
 
             <h3 className="text-xl font-bold">
@@ -133,15 +123,15 @@ function Dashboard() {
               {career.skills.length} skills in this path
             </div>
 
-            <button
-              type="button"
+            <Button
               onClick={() => setSelected(career.id)}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-3 font-semibold text-white transition hover:bg-indigo-400"
+              aria-pressed={selected === career.id}
+              className="mt-6 w-full"
             >
               {selected === career.id ? 'Selected' : 'Explore path'}
-              <ArrowRight size={18} />
-            </button>
-          </article>
+              <ArrowRight size={18} aria-hidden="true" />
+            </Button>
+          </Card>
         ))}
       </div>
 
@@ -173,97 +163,75 @@ function Dashboard() {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const { pathname } = useLocation()
+  const previousPath = useRef(pathname)
+  const mainRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (previousPath.current === pathname) return
+    previousPath.current = pathname
+    setMenuOpen(false)
+    const frame = requestAnimationFrame(() => mainRef.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [pathname])
+
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)')
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMenuOpen(false)
+    }
+    desktop.addEventListener('change', closeOnDesktop)
+    return () => desktop.removeEventListener('change', closeOnDesktop)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#0b1020] text-white md:flex">
-      {menuOpen && (
-        <button
-          type="button"
-          aria-label="Close navigation"
-          className="fixed inset-0 z-10 bg-black/60 md:hidden"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
-
-      <aside
-        className={`${
-          menuOpen ? 'flex' : 'hidden'
-        } fixed inset-y-0 left-0 z-20 w-64 flex-col border-r border-white/10 bg-[#11182b] p-6 md:sticky md:top-0 md:flex md:h-screen md:shrink-0`}
+    <div className="min-h-screen bg-canvas text-white md:flex">
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-xl bg-indigo-600 px-4 py-3 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
-        <div className="mb-10 flex items-center justify-between gap-3">
-          <Link
-            to="/"
-            className="flex items-center gap-3"
-            onClick={() => setMenuOpen(false)}
-          >
-            <div className="rounded-xl bg-indigo-500 p-2">
-              <Compass size={24} />
-            </div>
+        Skip to main content
+      </a>
 
-            <span className="text-xl font-bold">
-              DevAtlas
-            </span>
-          </Link>
-
-          <button
-            type="button"
-            className="md:hidden"
-            aria-label="Close menu"
-            onClick={() => setMenuOpen(false)}
-          >
-            <X size={22} />
-          </button>
-        </div>
-
-        <nav
-          aria-label="Main navigation"
-          className="space-y-2"
-        >
-          {navigation.map(({ icon: Icon, label, path }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              onClick={() => setMenuOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-4 py-3 transition ${
-                  isActive
-                    ? 'bg-indigo-500/15 font-medium text-indigo-300'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                }`
-              }
-            >
-              <Icon size={19} />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-auto rounded-2xl border border-indigo-400/20 bg-indigo-500/10 p-4">
-          <p className="font-semibold">
-            Your learning journey
-          </p>
-          <p className="mt-2 text-sm text-slate-400">
-            Explore career paths and discover your next skill.
-          </p>
-        </div>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-sidebar p-6 md:flex">
+        <Link to="/" className="mb-10 flex items-center gap-3">
+          <span className="rounded-xl bg-indigo-600 p-2">
+            <Compass size={24} aria-hidden="true" />
+          </span>
+          <span className="text-xl font-bold">DevAtlas</span>
+        </Link>
+        <SidebarNavigation />
       </aside>
+
+      <Dialog
+        id="mobile-navigation"
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        title="DevAtlas navigation"
+        variant="drawer"
+      >
+        <SidebarNavigation onNavigate={() => {
+          setMenuOpen(false)
+          requestAnimationFrame(() => mainRef.current?.focus())
+        }} />
+      </Dialog>
 
       <div className="min-w-0 flex-1">
         <header className="flex items-center gap-4 border-b border-white/10 px-6 py-4 md:hidden">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             aria-label="Open navigation"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            aria-haspopup="dialog"
             onClick={() => setMenuOpen(true)}
           >
-            <Menu size={24} />
-          </button>
-
-          <span className="font-bold">
-            DevAtlas
-          </span>
+            <Menu size={24} aria-hidden="true" />
+          </Button>
+          <span className="font-bold">DevAtlas</span>
         </header>
 
-        <main>
+        <main id="main-content" ref={mainRef} tabIndex={-1}>
           <Routes>
             <Route
               path="/"
@@ -272,12 +240,7 @@ export default function App() {
 
             <Route
               path="/careers"
-              element={
-                <PlaceholderPage
-                  title="Career Paths"
-                  description="Explore frontend, backend and data analyst career roadmaps."
-                />
-              }
+              element={<CareerPathsPage />}
             />
 
             <Route

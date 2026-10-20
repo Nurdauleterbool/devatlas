@@ -1,11 +1,18 @@
 
 @import "tailwindcss";
 
+@theme {
+  --color-canvas: #0b1020;
+  --color-sidebar: #11182b;
+  --color-surface: #161e34;
+}
+
 :root {
   font-family: Inter, Arial, sans-serif;
   color: #f1f5f9;
   background-color: #0b1020;
   font-synthesis: none;
+  color-scheme: dark;
 }
 
 * {
@@ -19,4 +26,46 @@ body {
 
 button {
   cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
+}
+
+.devatlas-dialog {
+  margin: auto;
+  width: min(32rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  border: 1px solid #ffffff26;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  color: #f1f5f9;
+  background: var(--color-surface);
+}
+
+.devatlas-dialog::backdrop {
+  background: #00000099;
+}
+
+.devatlas-drawer {
+  margin: 0;
+  width: min(20rem, calc(100% - 2rem));
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  background: var(--color-sidebar);
+}
+
+.devatlas-drawer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }
