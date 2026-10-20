@@ -2,7 +2,7 @@
 
 ## Current frontend data boundary
 
-`frontend/src/types/domain.ts` defines shared domain models. `DevAtlasService` is the session-scoped asynchronous contract; `services/index.ts` selects the adapter. Dashboard and Career Paths use an adapter-independent roadmap composer and never import fixture data. The mock stores shared skills/dependencies separately from per-user progress and derives verification from quiz attempts. See [mock service contract, validation and scenarios](mock-service.md). This frontend contract does not implement or freeze the later OpenAPI/backend stage.
+`frontend/src/types/domain.ts` defines shared domain models. `DevAtlasService` is the session-scoped asynchronous contract; `services/index.ts` selects the adapter. Dashboard and Career Paths use an adapter-independent roadmap composer and never import fixture data. The mock stores shared skills/dependencies separately from per-user progress and derives verification from quiz attempts. See [mock service contract, validation and scenarios](mock-service.md). Issue #3 adds mock session operations to the same contract; `AuthProvider` manages UI session state, and both sidebar variants share account controls. Public routes show labelled sample data when anonymous, while personal writes/history/attempts/analytics require a mock session. Session revisions reject delayed requests after an account change. See [mock authentication lifecycle and limitations](mock-auth.md). This frontend contract does not implement or freeze the later OpenAPI/backend stage.
 
 ## Modules
 - React pages: Auth, Dashboard, Career Paths, Skill Graph, Skill Detail, Quiz, History/Profile.

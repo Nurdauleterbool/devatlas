@@ -1,11 +1,16 @@
 import type {
-  Analytics, CareerPath, LearningResource, PracticeTask, ProgressEvent,
+  Analytics, AuthSession, CareerPath, LearningResource, LoginInput, PracticeTask, ProgressEvent,
   Quiz, QuizAttempt, QuizResult, Recommendation, Skill, SkillDependency,
-  SubmitQuizInput, UpdateProgressInput, User, UserCareerPath, UserSkillProgress,
+  SignUpInput, SubmitQuizInput, UpdateProgressInput, User, UserCareerPath, UserSkillProgress,
 } from '../types/domain'
 
 /** Session-scoped contract: implementations derive ownership, never accept a user ID from a page. */
 export interface DevAtlasService {
+  getSession(): Promise<AuthSession | null>
+  signUp(input: SignUpInput): Promise<AuthSession>
+  logIn(input: LoginInput): Promise<AuthSession>
+  logInDemo(): Promise<AuthSession>
+  logOut(): Promise<void>
   getCurrentUser(): Promise<User>
   getCareerPaths(): Promise<CareerPath[]>
   getCareerPath(id: string): Promise<CareerPath | undefined>
@@ -26,7 +31,8 @@ export interface DevAtlasService {
   getRecommendations(careerId: string): Promise<Recommendation[]>
 }
 
-export type ServiceErrorCode = 'VALIDATION' | 'NOT_FOUND' | 'UNAVAILABLE'
+export type ServiceErrorCode = 'VALIDATION' | 'NOT_FOUND' | 'UNAVAILABLE' |
+  'INVALID_CREDENTIALS' | 'EMAIL_IN_USE' | 'UNAUTHENTICATED' | 'SESSION_CHANGED'
 
 export class ServiceError extends Error {
   readonly code: ServiceErrorCode

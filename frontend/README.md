@@ -19,7 +19,7 @@ Vite prints its local address. `npm run dev -- --host 0.0.0.0` binds to all inte
 | `npm run build` | TypeScript project check and production assets in `dist/` |
 | `npm run lint` | Oxlint checks, including React hooks |
 | `npm run preview` | Serve the existing production build locally |
-| `npm run test` | Run Vitest unit tests for fixtures, service methods and configuration |
+| `npm run test` | Run Vitest unit tests for fixtures, service methods, authentication and configuration |
 | `npm run test:watch` | Watch and rerun unit tests during development |
 | `npm run test:e2e` | Chromium browser regression tests; starts Vite on port 4173 |
 
@@ -34,6 +34,9 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 ## Structure and routes
 
 - `src/App.tsx`: application layout, mobile drawer, Dashboard and route definitions.
+- `src/auth/`: contract-backed session provider and typed authentication context.
+- `src/pages/AuthPage.tsx`: responsive login/signup, accessible validation and pending/error/success states.
+- `src/components/AccountControls.tsx`: anonymous preview, signed-in identity and logout controls shared by both sidebars.
 - `src/components/SidebarNavigation.tsx`: the five shared navigation links with `aria-current` supplied by `NavLink`.
 - `src/components/ui/`: shared Button, Card, Input and Dialog.
 - `src/pages/CareerPathsPage.tsx`: selectable career roadmaps and seeded progress.
@@ -48,7 +51,7 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/index.css`: Tailwind import, theme tokens, global keyboard focus, modal/drawer styles and reduced-motion support.
 - `e2e/`: route, mock-state and UI accessibility regression tests.
 
-Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`. The last three remain placeholders. Dashboard selection is local component state and resets when the page is remounted. The current pages read seeded user progress; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
+Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph, Learning and Analytics remain placeholders. Dashboard selection is local component state and resets when the page is remounted. Anonymous pages read labelled demo progress; signed-in pages read the current user’s progress and reset local selections on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
 
 ## Mock data and UI scenarios
 
@@ -61,6 +64,14 @@ VITE_MOCK_SCENARIO=error VITE_MOCK_LATENCY_MS=1000 npm run dev
 ```
 
 Accepted scenarios are `success`, `empty`, and `error`; loading uses finite latency. Empty retains the demo user and clears the catalogue/progress/attempts; unknown writes are rejected. Invalid settings are rejected rather than silently ignored. For programmatic per-method failures and clock/fixture injection, see the [mock service documentation](../_docs/mock-service.md).
+
+## Mock accounts and sessions
+
+The application starts signed out. Open `/login` and choose **Try mock demo account** for seeded sample progress, or use `/signup` to create an isolated test account. No preset password is displayed or needed for the demo action. Logout is available above the five navigation links, including inside the mobile drawer. Existing public routes remain available when signed out.
+
+Forms reuse Button, Card and Input. Required name/email/password fields, email syntax, 8–128 character passwords, and signup password confirmation have associated errors. Email is trimmed/lowercased; passwords retain their exact characters. Invalid submission focuses the first invalid field, and request errors/success are announced. Passwords stay masked, are cleared after authentication requests, and are never logged. Disabled fieldsets/buttons and an immediate submission guard prevent duplicate requests. Web Crypto hashes signup passwords into memory; accounts and sessions reset on reload. Use a disposable test password.
+
+`AuthProvider` consumes only `DevAtlasService`: `getSession`, `signUp`, `logIn`, `logInDemo` and `logOut`. The composition root opts into an anonymous initial session. The factory retains its default demo session for existing non-UI consumers and tests. Personal writes/history/attempts/analytics require a session; public progress is a read-only sample when anonymous. The mock is not an authorization boundary or production authentication. No tokens or credentials are persisted. See [authentication contract and limitations](../_docs/mock-auth.md).
 
 ## Design and accessibility conventions
 
@@ -101,4 +112,4 @@ Use links for navigation and buttons for actions. On mobile (below 768px), the d
 
 ## QA
 
-Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #2 QA report](../_docs/issue-2-qa.md) records current results; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.
+Run build, lint, unit and browser tests before review. Vitest uses Node and includes only `src/**/*.test.ts`, so Playwright specs are not collected as unit tests. Browser coverage is Chromium only and does not replace manual screen-reader or visual review. The [Issue #3 QA report](../_docs/issue-3-qa.md) records current results (104 unit tests and 20 browser tests); [Issue #2 QA](../_docs/issue-2-qa.md) records the earlier service baseline; the [Issue #1 QA report](../_docs/issue-1-qa.md) retains earlier scaffold evidence.
