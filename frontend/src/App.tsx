@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import {
   Compass,
@@ -16,6 +16,8 @@ import AuthPage from './pages/AuthPage'
 import CareerProvider from './careers/CareerProvider'
 import DashboardPage from './pages/DashboardPage'
 import { useAuth } from './auth/authContext'
+
+const SkillGraphPage = lazy(() => import('./pages/SkillGraphPage'))
 
 export default function App() {
   const { session } = useAuth()
@@ -109,12 +111,7 @@ export default function App() {
 
               <Route
                 path="/graph"
-                element={
-                  <PlaceholderPage
-                    title="Skill Graph"
-                    description="Explore skill dependencies and discover what to learn next."
-                  />
-                }
+                element={<Suspense fallback={<p role="status" className="p-6 text-slate-400">Loading skill graph…</p>}><SkillGraphPage key={dataKey} /></Suspense>}
               />
 
               <Route

@@ -4,24 +4,23 @@ Verified snapshot: **2026-10-20, Asia/Qyzylorda**. This records observed GitHub/
 
 ## Current checkpoint
 
-- `origin/main`: `2fd8a8a9a95c48ff944e4b1e436f3135b39c5451` (merged Issue #3).
-- Issues #1–#3 are actually **CLOSED / COMPLETED**. Public PR pages #27, #28 and #29 show **Merged**, and their merge commits `eb0063e`, `b530aae`, `2fd8a8a` are in `origin/main`.
-- Issue #4 is **OPEN**. Implementation `4dfd4c589acc5630980008c40900f6e883ada5ca` is pushed on `feat/issue-4-career-dashboard` but is **not merged**. Follow-up documentation commits remain on that same feature branch; read the remote branch tip for the latest revision.
-- Public PR search for that branch returns **0 open / 0 closed** PRs. The PR does not exist. No merge or issue closure was attempted without a PR.
-- Required MVP backlog: **22 issues**, **3 closed**, **19 open (#4–#22)**. The four post-MVP issues #23–#26 are excluded. Both public issue-list pages were inspected (26 total issues); there were no additional bug issues in that snapshot.
-- **Overall project: NOT READY / INTEGRATION BLOCKED.** Issue #4 is ready for review, not complete under the requested merged-and-verified Definition of Done.
+- Issues #1–#4 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) and [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) are merged.
+- Issue #4 merged as `1591dbd31fee1f827f322ecc81cfaab7006ed051`; its final implementation `eb2720e43377c65616c63b7782c00a78df1b5a1a` was verified as an ancestor of fetched origin/main before QA closed the issue.
+- GitHub API access now works using the existing injected authentication. The earlier network blocker is resolved by observed successful PR creation, merge and issue closure. No token was requested or copied.
+- Issue #5 is in progress on `feat/issue-5-skill-graph`, based on the fetched #4 merge. Required MVP: **22 issues**, **4 closed**, **18 open (#5–#22)**. Post-MVP #23–#26 remain excluded.
+- The full MVP remains under development; backend, persistence and HTTP integration are later stages.
 
 ## Live backlog and dependencies
 
-The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Every remaining issue #5–#22 depends transitively on #4. There is no independent, dependency-ready required implementation to start while #4 is unmerged. Do not start the API/backend/persistence stages early.
+The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #5 is dependency-ready after #4 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
 
 | Issue | Stage | Direct dependencies | Verified status |
 | --- | --- | --- | --- |
 | [#1](https://github.com/Nurdauleterbool/devatlas/issues/1) — Scaffold frontend and design system | Mock frontend | None | CLOSED; merged PR #27 |
 | [#2](https://github.com/Nurdauleterbool/devatlas/issues/2) — Create typed mockService and seed fixtures | Mock frontend | #1 | CLOSED; merged PR #28 |
 | [#3](https://github.com/Nurdauleterbool/devatlas/issues/3) — Build registration/login UI and states | Mock frontend | #1, #2 | CLOSED; merged PR #29 |
-| [#4](https://github.com/Nurdauleterbool/devatlas/issues/4) — Build career selection and dashboard UI | Mock frontend | #1, #2, #3 | OPEN; implementation pushed; PR/merge blocked |
-| [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | OPEN; dependency blocked |
+| [#4](https://github.com/Nurdauleterbool/devatlas/issues/4) — Build career selection and dashboard UI | Mock frontend | #1, #2, #3 | CLOSED; merged PR #30 |
+| [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | OPEN; implementation in progress |
 | [#6](https://github.com/Nurdauleterbool/devatlas/issues/6) — Build skill detail and resources UI | Mock frontend | #2, #5 | OPEN; dependency blocked |
 | [#7](https://github.com/Nurdauleterbool/devatlas/issues/7) — Build quiz and results UI | Mock frontend | #2, #6 | OPEN; dependency blocked |
 | [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | OPEN; dependency blocked |
@@ -61,24 +60,21 @@ Latest full regression rerun after the auth-navigation correction on 2026-10-20,
 
 System Chromium 154.0.8037.57 was used. All suites actually executed; no environment-blocked test is counted as passed. Independent QA reproduced a stale Dashboard when a delayed career write finished after browser Back through the signed-in login page. The keyed career provider now stays mounted across auth-route visits while auth forms remain outside it. A deterministic browser regression failed before the fix and passed afterward; the complete unchanged auth suite and account-isolation checks pass. The correction and earlier signup-remount/test-harness evidence are recorded in the issue QA report. Human screen-reader, Firefox/Safari and physical-device checks remain unexecuted. Backend/SQLite/integration suites are not implemented and were not run; these frontend results do not validate future stages.
 
-## GitHub blocker and recovery
+## Integration and continuation
 
-Read/push through the existing Git proxy works. GitHub API requests do not:
+The earlier api.github.com CONNECT/403 blocker is resolved: PR #30 was created, its state was checked as MERGEABLE/CLEAN with no configured checks, and the independently reviewed, fully tested exact head was merged without bypassing protections. Only afterward was #4 closed through the API. Existing GitHub authentication supports the requested operations.
 
-- `gh api 'repos/Nurdauleterbool/devatlas/issues?state=all' --paginate` fails with `Get "https://api.github.com/repos/Nurdauleterbool/devatlas/issues?state=all&per_page=100": Forbidden`.
-- `gh pr create --repo Nurdauleterbool/devatlas --base main --head feat/issue-4-career-dashboard --title 'MVP-04: Add career selection and personalized dashboard' --body-file _docs/issue-4-pr.md` fails with `Post "https://api.github.com/graphql": Forbidden` (exit 1).
-- No callable GitHub connector was available. Public web pages supplied read-only status evidence; they do not provide write authorization. This was an API access denial, not an automatic approval-review rejection.
+Current development: #5 interactive React Flow graph, using existing typed career roadmaps. After its acceptance criteria and full regression pass, commit/push a separate PR, verify merge gates, merge, confirm the implementation in main, and only then close #5. Next is #6 skill details/resources/status controls. Continue the dependency table above, recording actual test counts and PR/issue states after each integration. No post-MVP implementation is authorized.
 
-**Network recovery saved in this run:** added only `api.github.com` to the custom allowed-domain draft, preserving the package-manager presets. Configuration save returned `status: saved`; this does not apply runtime changes or publish the environment. An unauthenticated HTTPS request to the API also fails at CONNECT with HTTP 403, establishing a network-policy blocker before credential validation. Apply/save this domain in environment settings, then retry the existing injected GitHub authentication; no new token is established as necessary.
+## Completed issue evidence
 
-**Action needed:** restore API access as above and retry PR creation, or create the [Issue #4 PR targeting main](https://github.com/Nurdauleterbool/devatlas/pull/new/feat/issue-4-career-dashboard) using the committed body, then review the QA evidence/acceptance criteria and required checks. Merge only when all required gates pass; verify the merged implementation in main before closing #4. Alternatively restore GitHub API access in the environment and rerun the documented command. No secret values are needed in chat. Do not push a direct merge to main to bypass the PR requirement.
+| Issue | Result | Features and changes | Validation | Next |
+| --- | --- | --- | --- | --- |
+| #4 — Career selection and Dashboard | PR #30 MERGED; Issue CLOSED after verification | Service-backed selection/dashboard; auth-route pending-save race fixed in App.tsx with a failing-before/passing-after browser regression; full file list and corrections in issue-4-qa.md | Build/lint PASS; 122 unit and 33 browser tests PASS; independent QA approved | #5 |
 
-## Exact continuation instructions
 
-1. Recheck GitHub Issue #4 and the branch PR search first to avoid duplicate PRs or closures. If a PR now exists, record its actual URL/status here.
-2. Fetch `origin/main` and the feature branch. Verify that #4 is merged, the actual required checks pass, and its functionality is present in main. Rerun full frontend regression for any changed application code or merge conflict resolution. Close #4 only after verified merge/completion.
-3. Read Issue #5 and current repository instructions again. Create `feat/issue-5-skill-graph` from the new `origin/main`; implement the React Flow graph and its tests/QA in a separate PR. #5 is the next issue; no #5 code or branch has been started here.
-4. Continue the dependency table above, keeping each issue separate. Finish mock frontend #5–#8 before OpenAPI #9; finish in-memory backend before SQLite; integrate HTTP only when the backend is ready. Keep updating this document with actual tests, PR links and merge/issue states.
-5. Preserve the existing #4 commits. Do not mark #5–#22 complete, close issues for metrics, or implement #23–#26.
+## Issue #5 — implementation awaiting integration
 
-No continuation is scheduled or running after this turn. The checkpoint and branch are preserved so work can resume once the external integration blocker is resolved. A final full-project verification cannot honestly be performed until the remaining required implementation stages exist.
+Interactive React Flow prerequisite graph with all three career paths, five labelled skill states, missing-prerequisite explanations, zoom/pan/fit, matching detail modal and keyboard skill list. Graph exploration preserves saved choices. See issue-5-qa.md for all files and corrections.
+
+Executed checks: build/lint PASS; 141 unit tests PASS (7 files); final full Chromium suite 40 PASS / 0 failed / 0 skipped in 40.6s, including all prior 33 scenarios and seven new graph scenarios. Nineteen new model tests pass. Independent QA approved. Early Vite reload interruption and small-control sizing were corrected and documented; no tests were disabled. Next dependency-ready issue after verified merge/closure is #6.

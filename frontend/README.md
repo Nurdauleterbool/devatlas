@@ -1,6 +1,6 @@
 # DevAtlas frontend
 
-React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + React Router. This is the frontend/mock stage; no backend or secrets are needed.
+React 19 + TypeScript + Vite 8 + Tailwind CSS 4 + React Router + React Flow. This is the frontend/mock stage; no backend or secrets are needed.
 
 ## Setup and commands
 
@@ -44,7 +44,9 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/components/SidebarNavigation.tsx`: the five shared navigation links with `aria-current` supplied by `NavLink`.
 - `src/components/ui/`: shared Button, Card, Input and Dialog.
 - `src/pages/CareerPathsPage.tsx`: selectable career roadmaps and seeded progress.
-- `src/pages/PlaceholderPage.tsx`: Skill Graph, Learning, Analytics and missing-page screens.
+- `src/pages/SkillGraphPage.tsx`: React Flow graph, career selector, keyboard skill list and basic skill-detail modal.
+- `src/services/skillGraph.ts`: deterministic graph layout/status composition from typed roadmaps, with reference/cycle validation.
+- `src/pages/PlaceholderPage.tsx`: Learning, Analytics and missing-page screens.
 - `src/types/domain.ts`: shared domain types, with catalogue skills separate from user progress.
 - `src/services/DevAtlasService.ts`: replaceable, Promise-returning, session-scoped service interface and typed errors.
 - `src/services/index.ts`: composition root binding the application to the current adapter.
@@ -55,7 +57,7 @@ Playwright is a development dependency only. Tests run against Vite with two wor
 - `src/index.css`: Tailwind import, theme tokens, global keyboard focus, modal/drawer styles and reduced-motion support.
 - `e2e/`: route, mock-state and UI accessibility regression tests.
 
-Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph, Learning and Analytics remain placeholders. Career selections come from `getSelectedCareers`, and `setSelectedCareers` persists changes across route navigation within this mock instance. Anonymous pages allow roadmap previews but require login to save choices. Signed-in pages read the current user’s progress and reset their cached workspace on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
+Routes: Dashboard `/`, Career Paths `/careers`, Skill Graph `/graph`, Learning `/learning`, Analytics `/analytics`, Login `/login`, Sign Up `/signup`. Skill Graph renders the selected career’s directed prerequisites, completion/learning/available/locked/quiz-verified states, zoom/pan controls and skill details. The graph loads as a separate route module. A native career selector and visible skill-button list provide keyboard alternatives; missing prerequisites are named. Graph browsing does not alter saved career choices. Learning and Analytics remain placeholders. Career selections come from `getSelectedCareers`, and `setSelectedCareers` persists changes across route navigation within this mock instance. Anonymous pages allow roadmap previews but require login to save choices. Signed-in pages read the current user’s progress and reset their cached workspace on account changes; the service also supports in-memory updates and quiz submissions for future screens. A full reload/new service instance resets all mutations. Production hosts must fall back to `index.html` for these browser-history routes.
 
 ## Mock data and UI scenarios
 

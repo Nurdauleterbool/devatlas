@@ -49,6 +49,11 @@ button {
   background: #00000099;
 }
 
+.devatlas-skill-graph .react-flow__controls-button {
+  width: 44px;
+  height: 44px;
+}
+
 .devatlas-drawer {
   margin: 0;
   width: min(20rem, calc(100% - 2rem));
