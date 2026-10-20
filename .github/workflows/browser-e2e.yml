@@ -52,7 +52,7 @@ jobs:
           exit 1
       - name: Mock browser regression journeys
         working-directory: frontend
-        run: npm run test:e2e -- --workers=2
+        run: npm run test:e2e -- --workers=1 --retries=1
       - name: Live full-stack browser journey
         working-directory: frontend
         run: npm run test:e2e -- --config=playwright.live.config.ts
