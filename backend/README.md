@@ -1,48 +1,32 @@
-# DevAtlas FastAPI backend
+# DevAtlas backend — FastAPI, SQLite and Alembic
 
-Python 3.12+; install and run from `backend/`:
+Python 3.12+. The server's imported `app.main:app` defaults to SQLite with automatic Alembic migrations and deterministic catalogue seeding; `create_app()` is in-memory by default for isolated unit tests.
 
-```bash
+## Install and run
+
+From the `backend/` directory:
+
+```sh
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -e '.[test]'
-uvicorn app.main:app --reload
-python -m pytest -q
-```
-
-API prefix: `/api/v1`. Routes:
-- Health: `GET /health`.
-- Auth: `/auth/signup`, `/auth/login`, `/auth/logout`, `/auth/session`, `/auth/me`.
-- Public catalogue: `/career-paths`, `/skills`, `/dependencies`, skill resources and practice tasks.
-- Progress: `GET /progress` (authenticated or synthetic anonymous), `PUT /me/progress/{skillId}` (status only), `GET /me/progress/history`.
-- Quizzes: `GET /skills/{skillId}/quiz`, `POST /quizzes/{quizId}/attempts`, `GET /me/quiz-attempts`.
-- Analytics: `GET /me/analytics` authenticated, shows shared-skill counts, all career summaries, attempts and learning history.
-- Recommendations: `GET /career-paths/{careerId}/recommendations` authenticated or neutral anonymous preview. Completed/verified and locked skills are excluded; continue-learning precedes start-next.
-
-Authentication uses hashed passwords, opaque HttpOnly cookie sessions, and server-side access controls. No raw quiz grading keys are exposed before a submission. Set `DEVATLAS_FRONTEND_ORIGIN` and `DEVATLAS_ENVIRONMENT` for deployment settings.
-
-This stage uses in-memory repositories and is not production-safe with multiple workers. Persistence (#16–#18), frontend HTTP integration (#19) and full manual QA remain future work. See `_docs/api-contract.md` for authoritative API rules.
-
-
-## SQLite schema (Issue #16)
-
-The portable SQLAlchemy schema and initial Alembic migration are available for development; the running API still uses in-memory repositories until Issue #17.
-
-From `backend/` after `pip install -e '.[test]'`:
-
-```bash
+source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -e '.[test]'
 python -m alembic upgrade head
-python -m alembic current
-python -m pytest -q
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-This creates local `devatlas.db` by default; set `DEVATLAS_DATABASE_URL=sqlite:////absolute/path/to/app.db` to override. Never commit local DB files. The schema includes 16 tables with relational and uniqueness constraints. See `_docs/issue-16-qa.md`.
+Health check: `http://127.0.0.1:8000/api/v1/health` returns `{"status":"ok"}`. Interactive OpenAPI docs: `http://127.0.0.1:8000/docs`. Default database file: `backend/devatlas.db`, ignored by git. `DEVATLAS_DATABASE_URL` can select an absolute SQLite path. Set `DEVATLAS_FRONTEND_ORIGIN=http://localhost:5173` for the default browser origin; `DEVATLAS_ENVIRONMENT=production` is for HTTPS-only deployments with Secure cookies.
 
+## Routes
 
-## Persistent SQLite backend (Issue #17)
+All routes start with `/api/v1`. Public catalogue: careers, skills, dependencies, resources and practice tasks; signed-in `/me/careers`, `/me/progress`, progress history, quiz submissions and attempt history, and `/me/analytics`. Public progress/recommendations show a neutral synthetic preview to anonymous visitors. Quiz answers are graded on the server and only exposed after submission. See [the API mapping](../_docs/api-contract.md) and [normative OpenAPI](../_docs/openapi.yml).
 
-`uvicorn app.main:app --reload` uses SQLAlchemy-backed SQLite storage by default and runs the Alembic migration before seeding career, skill and quiz data. Set `DEVATLAS_DATABASE_URL=sqlite:////absolute/path/devatlas.db` to select a different database file. Test-created `create_app()` instances default to isolated in-memory storage; opt in explicitly with `create_app(Settings(storage_backend="sqlite", database_url=...))`.
+## Verification
 
-The SQL repository adapter preserves the existing service interface, saving users, hashed passwords, digest-keyed sessions, learning progress, immutable history and scored quiz attempts with answer responses. Seed routines are repeatable: reopening a database does not duplicate the ten skills or fifty questions. Run `python -m alembic upgrade head` manually to inspect or upgrade a database.
+```sh
+python -m pytest -q
+python -m alembic current
+```
 
-SQLite persistence does not imply production-hardening or multi-worker concurrency safety. Stronger atomic workflows, foreign-key rollback and multi-user persistence verification are covered further in Issue #18.
+From the repository root, follow [full stack installation and demo](../README.md). The [Issue #17](../_docs/issue-17-qa.md), [Issue #18](../_docs/issue-18-qa.md) and [Issue #20](../_docs/issue-20-qa.md) documents cover durable storage, owner isolation and full browser QA.
+
+**Limitations:** local SQLite / in-process locks are not production multiworker architecture; no dedicated login rate limiting or verified email flow. Human acceptance tests are pending Issue #21.
