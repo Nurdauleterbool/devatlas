@@ -3,7 +3,8 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .auth import AuthManager, router as auth_router
@@ -88,6 +89,26 @@ def create_app(
     @app.get("/api/v1/health", response_model=HealthResponse, tags=["Operations"])
     def health() -> HealthResponse:
         return HealthResponse(status="ok")
+
+    # In a single-service deployment FastAPI serves React and the API on one origin.
+    # Without a built dist directory (e.g. tests and local Vite development),
+    # this block is intentionally inert.
+    frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+    if frontend_dist.is_dir():
+        assets = frontend_dist / "assets"
+        if assets.is_dir():
+            app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
+
+        @app.get("/{requested_path:path}", include_in_schema=False)
+        def react_spa(requested_path: str):
+            if requested_path.startswith("api/"):
+                raise HTTPException(status_code=404, detail={"error": {"code": "NOT_FOUND", "message": "Resource not found."}})
+            candidate = (frontend_dist / requested_path).resolve()
+            if candidate.is_file() and candidate.is_relative_to(frontend_dist.resolve()):
+                return FileResponse(candidate)
+            if "." in Path(requested_path).name:
+                raise HTTPException(status_code=404, detail={"error": {"code": "NOT_FOUND", "message": "Resource not found."}})
+            return FileResponse(frontend_dist / "index.html")
 
     return app
 
