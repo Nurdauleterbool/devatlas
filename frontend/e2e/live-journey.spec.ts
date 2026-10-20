@@ -72,7 +72,15 @@ test('live keyboard and responsive accessibility smoke checks', async ({ page })
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-    await expect(page.getByRole('navigation')).toBeVisible()
+    const navigation = page.getByRole('navigation', { name: 'Main navigation' })
+    const mobileToggle = page.getByRole('button', { name: 'Open navigation' })
+    if (await mobileToggle.isVisible()) {
+      await mobileToggle.click()
+      await expect(page.getByRole('dialog').getByRole('navigation')).toBeVisible()
+      await page.keyboard.press('Escape')
+    } else {
+      await expect(navigation).toBeVisible()
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     const links = page.getByRole('link')
     expect(await links.count()).toBeGreaterThan(0)
