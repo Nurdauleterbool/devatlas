@@ -1,5 +1,6 @@
 
 import { Link } from 'react-router-dom'
+import Card from '../components/ui/Card'
 
 type Props = {
   title: string
@@ -16,16 +17,16 @@ export default function PlaceholderPage({ title, description }: Props) {
       <h1 className="mt-4 text-4xl font-bold">{title}</h1>
       <p className="mt-4 text-slate-400">{description}</p>
 
-      <div className="mt-10 rounded-2xl border border-white/10 bg-[#161e34] p-8">
+      <Card className="mt-10">
         <p>This section is under development.</p>
 
         <Link
           to="/"
-          className="mt-6 inline-block rounded-xl bg-indigo-500 px-5 py-3 font-semibold"
+          className="mt-6 inline-block rounded-xl bg-indigo-600 px-5 py-3 font-semibold hover:bg-indigo-700"
         >
           Back to Dashboard
         </Link>
-      </div>
+      </Card>
     </section>
   )
 }
