@@ -1,0 +1,2463 @@
+# Normative MVP contract; see api-contract.md for mapping and security decisions.
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: DevAtlas MVP API
+  version: 1.0.0
+  description: 'Contract after verified mock frontend and before backend implementation. See api-contract.md
+    for the complete service mapping, ownership, rounding, history and dashboard composition rules. All
+    JSON fields use camelCase. Personal responses, auth/session responses and errors use Cache-Control:
+    no-store. All ownership derives from an authenticated cookie session, never a request userId. Public
+    progress/recommendations use a synthetic preview when anonymous. The mock-only logInDemo method has
+    no production HTTP endpoint. This document specifies the target; implemented server routes are delivered
+    in #10–#18.'
+servers:
+- url: http://127.0.0.1:8000/api/v1
+  description: Local development API
+security: []
+x-mock-only-service-methods:
+- logInDemo
+tags:
+- name: Analytics
+- name: Authentication
+- name: Catalogue
+- name: Learning progress
+- name: Operations
+- name: Quizzes
+paths:
+  /auth/session:
+    get:
+      operationId: getSession
+      summary: Read the current session
+      description: Returns ApiSession for a valid cookie or JSON null when missing, invalid or expired.
+        This read does not extend the fixed eight-hour expiry. Session metadata is public to its own browser;
+        the opaque token is never in JSON.
+      tags:
+      - Authentication
+      x-service-methods:
+      - getSession
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '200':
+          description: Current session metadata, or null when anonymous.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/ApiSession'
+                - type: 'null'
+              examples:
+                signedIn:
+                  value:
+                    kind: http
+                    user:
+                      id: user-1
+                      displayName: Ada Student
+                      email: ada@example.test
+                      createdAt: '2026-10-01T12:00:00.000Z'
+                    authenticatedAt: '2026-10-20T12:00:00.000Z'
+                anonymous:
+                  value: null
+  /auth/signup:
+    post:
+      operationId: signUp
+      summary: Register and start a session
+      description: 'Creates an account, normalizes the email by trimming/lowercasing, hashes the password
+        on the server, and creates a fresh opaque session with a fixed eight-hour expiry. Duplicate normalized
+        emails return EMAIL_IN_USE. Passwords are never returned or logged. Unsafe browser requests require
+        an Origin matching the configured frontend origin and must not have Sec-Fetch-Site: cross-site.
+        An absent Origin is allowed for non-browser clients; a present untrusted or null Origin is rejected
+        with 403 FORBIDDEN. The server derives the owner from the cookie and rejects extra body properties;
+        callers cannot set owner IDs, grades, verification or timestamps.'
+      tags:
+      - Authentication
+      x-service-methods:
+      - signUp
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          $ref: '#/components/responses/EmailInUseError'
+        '201':
+          description: Account created; public session metadata and a fresh session cookie.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSession'
+              example:
+                kind: http
+                user:
+                  id: user-1
+                  displayName: Ada Student
+                  email: ada@example.test
+                  createdAt: '2026-10-01T12:00:00.000Z'
+                authenticatedAt: '2026-10-20T12:00:00.000Z'
+          headers:
+            Set-Cookie:
+              description: 'Sets a newly generated opaque devatlas_session cookie: HttpOnly; SameSite=Lax;
+                Path=/api/v1; Max-Age=28800. Secure is required in production HTTPS. The JSON body contains
+                public session metadata, never the cookie token.'
+              schema:
+                type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpInput'
+            example:
+              email: ada@example.test
+              password: Learning123!
+              displayName: Ada Student
+  /auth/login:
+    post:
+      operationId: logIn
+      summary: Authenticate and start a session
+      description: 'Checks normalized email and the server-side password hash, then creates a fresh opaque
+        session with a fixed eight-hour expiry. Unknown email and wrong password return the same INVALID_CREDENTIALS
+        error. Never accepts client-selected session tokens. Demo sign-in is mock-only and has no HTTP
+        endpoint. Unsafe browser requests require an Origin matching the configured frontend origin and
+        must not have Sec-Fetch-Site: cross-site. An absent Origin is allowed for non-browser clients;
+        a present untrusted or null Origin is rejected with 403 FORBIDDEN. The server derives the owner
+        from the cookie and rejects extra body properties; callers cannot set owner IDs, grades, verification
+        or timestamps.'
+      tags:
+      - Authentication
+      x-service-methods:
+      - logIn
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '401':
+          $ref: '#/components/responses/InvalidCredentialsError'
+        '200':
+          description: Authenticated public session metadata and a fresh session cookie.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiSession'
+              example:
+                kind: http
+                user:
+                  id: user-1
+                  displayName: Ada Student
+                  email: ada@example.test
+                  createdAt: '2026-10-01T12:00:00.000Z'
+                authenticatedAt: '2026-10-20T12:00:00.000Z'
+          headers:
+            Set-Cookie:
+              description: 'Sets a newly generated opaque devatlas_session cookie: HttpOnly; SameSite=Lax;
+                Path=/api/v1; Max-Age=28800. Secure is required in production HTTPS. The JSON body contains
+                public session metadata, never the cookie token.'
+              schema:
+                type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+            example:
+              email: ada@example.test
+              password: Learning123!
+  /auth/logout:
+    post:
+      operationId: logOut
+      summary: Revoke the current session
+      description: 'Idempotently revokes the presented session and clears the cookie. Anonymous, invalid
+        or already expired cookies also produce 204. No request body, user ID or token body is accepted.
+        A revoked cookie cannot authenticate later requests. Unsafe browser requests require an Origin
+        matching the configured frontend origin and must not have Sec-Fetch-Site: cross-site. An absent
+        Origin is allowed for non-browser clients; a present untrusted or null Origin is rejected with
+        403 FORBIDDEN. The server derives the owner from the cookie and rejects extra body properties;
+        callers cannot set owner IDs, grades, verification or timestamps.'
+      tags:
+      - Authentication
+      x-service-methods:
+      - logOut
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '204':
+          description: Session revoked if present; no response body.
+          headers:
+            Set-Cookie:
+              description: Clears devatlas_session using the same /api/v1 cookie path and flags and Max-Age=0;
+                Secure in production HTTPS.
+              schema:
+                type: string
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Read the signed-in user
+      description: 'Returns only the current session owner, without credentials or token material. Requires
+        a valid unexpired session cookie; missing, invalid or expired sessions return 401 UNAUTHENTICATED. '
+      tags:
+      - Authentication
+      x-service-methods:
+      - getCurrentUser
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: user-1
+                displayName: Ada Student
+                email: ada@example.test
+                createdAt: '2026-10-01T12:00:00.000Z'
+  /career-paths:
+    get:
+      operationId: getCareerPaths
+      summary: List career paths
+      description: Returns the shared ordered career catalogue for Frontend Developer, Backend Developer
+        and Data Analyst. Each path references shared skill IDs; user selections and progress are separate
+        resources.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getCareerPaths
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CareerPath'
+              example:
+              - id: frontend
+                name: Frontend Developer
+                description: Build modern websites and interactive interfaces.
+                skillIds:
+                - html
+                - css
+                - javascript
+                - react
+  /career-paths/{careerId}:
+    get:
+      operationId: getCareerPath
+      summary: Read a career path
+      description: Returns one career definition and its ordered skill IDs. An unknown path returns 404;
+        the HTTP adapter translates this single-resource lookup to undefined. Skills and edges are available
+        through the catalogue endpoints.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getCareerPath
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CareerPath'
+              example:
+                id: frontend
+                name: Frontend Developer
+                description: Build modern websites and interactive interfaces.
+                skillIds:
+                - html
+                - css
+                - javascript
+                - react
+      parameters:
+      - $ref: '#/components/parameters/CareerId'
+  /skills:
+    get:
+      operationId: getSkills
+      summary: List shared skills
+      description: Returns each shared skill once, with definitions only. Learning status and quiz verification
+        are user-specific and never stored on a shared skill.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getSkills
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Skill'
+              example:
+              - id: html
+                name: HTML
+                description: Structure accessible web content with semantic elements.
+  /skills/{skillId}:
+    get:
+      operationId: getSkill
+      summary: Read a shared skill
+      description: Returns the shared skill definition. An unknown ID returns 404; the HTTP adapter translates
+        this single-resource lookup to undefined. No user learning state is embedded.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getSkill
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Skill'
+              example:
+                id: html
+                name: HTML
+                description: Structure accessible web content with semantic elements.
+      parameters:
+      - $ref: '#/components/parameters/SkillId'
+  /dependencies:
+    get:
+      operationId: getDependencies
+      summary: List prerequisite edges
+      description: Returns the shared acyclic dependency graph. Each edge skillId and prerequisiteId references
+        an existing catalogue skill. Arrows point from prerequisiteId to skillId.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getDependencies
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SkillDependency'
+              example:
+              - skillId: css
+                prerequisiteId: html
+  /skills/{skillId}/resources:
+    get:
+      operationId: getLearningResources
+      summary: List learning resources for a skill
+      description: Returns curated resource metadata for a known skill, including safe HTTPS URLs and
+        the isFree marker. A known skill without resources returns an empty array; an unknown skill returns
+        404.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getLearningResources
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningResource'
+              example:
+              - id: html-mdn
+                skillId: html
+                title: 'MDN: Structuring content with HTML'
+                url: https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content
+                kind: documentation
+                isFree: true
+      parameters:
+      - $ref: '#/components/parameters/SkillId'
+  /skills/{skillId}/practice-tasks:
+    get:
+      operationId: getPracticeTasks
+      summary: List practice tasks for a skill
+      description: Returns practice exercises for a known skill. A known skill without exercises returns
+        an empty array; an unknown skill returns 404.
+      tags:
+      - Catalogue
+      x-service-methods:
+      - getPracticeTasks
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PracticeTask'
+              example:
+              - id: html-profile
+                skillId: html
+                title: Semantic profile
+                description: Build a profile page with headings, landmarks, links, and a labelled form.
+      parameters:
+      - $ref: '#/components/parameters/SkillId'
+  /skills/{skillId}/quiz:
+    get:
+      operationId: getQuizForSkill
+      summary: Read public quiz questions
+      description: Returns 5–10 questions with four options each and an 80% passing threshold. Correct
+        option IDs and explanations are omitted before submission, including nested/adapter fields. A
+        known skill with no quiz returns 204 with no body, which the adapter maps to undefined. An unknown
+        skill returns 404.
+      tags:
+      - Quizzes
+      x-service-methods:
+      - getQuizForSkill
+      security: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quiz'
+              example:
+                id: quiz-html
+                skillId: html
+                title: HTML knowledge check
+                passThreshold: 80
+                questions:
+                - id: html-q1
+                  prompt: Which element represents the primary page content?
+                  options:
+                  - id: html-q1-o1
+                    text: <span>
+                  - id: html-q1-o2
+                    text: <main>
+                  - id: html-q1-o3
+                    text: <style>
+                  - id: html-q1-o4
+                    text: <meta>
+                - id: html-q2
+                  prompt: How is a visible label associated with an input?
+                  options:
+                  - id: html-q2-o1
+                    text: Matching CSS classes
+                  - id: html-q2-o2
+                    text: A placeholder alone
+                  - id: html-q2-o3
+                    text: A title on the form
+                  - id: html-q2-o4
+                    text: Matching label for and input id
+                - id: html-q3
+                  prompt: What should an informative image have?
+                  options:
+                  - id: html-q3-o1
+                    text: Meaningful alternative text
+                  - id: html-q3-o2
+                    text: An empty file name
+                  - id: html-q3-o3
+                    text: A nested heading
+                  - id: html-q3-o4
+                    text: Only a background color
+                - id: html-q4
+                  prompt: Which element provides native navigation to a URL?
+                  options:
+                  - id: html-q4-o1
+                    text: <div onclick="...">
+                  - id: html-q4-o2
+                    text: <b>
+                  - id: html-q4-o3
+                    text: <a href="...">
+                  - id: html-q4-o4
+                    text: <section>
+                - id: html-q5
+                  prompt: Which attribute marks a mandatory form field?
+                  options:
+                  - id: html-q5-o1
+                    text: mandatory
+                  - id: html-q5-o2
+                    text: required
+                  - id: html-q5-o3
+                    text: checked
+                  - id: html-q5-o4
+                    text: selected
+        '204':
+          description: Known skill has no quiz; no response body.
+      parameters:
+      - $ref: '#/components/parameters/SkillId'
+  /me/careers:
+    get:
+      operationId: getSelectedCareers
+      summary: Read my selected careers
+      description: 'Returns the current owner''s ordered career selections; no selection is an empty array.
+        Requires a valid unexpired session cookie; missing, invalid or expired sessions return 401 UNAUTHENTICATED. '
+      tags:
+      - Learning progress
+      x-service-methods:
+      - getSelectedCareers
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserCareerPath'
+              example:
+              - userId: user-1
+                careerId: frontend
+                selectedAt: '2026-10-20T12:00:00.000Z'
+    put:
+      operationId: setSelectedCareers
+      summary: Replace my selected careers
+      description: 'Atomically replaces the current owner''s full ordered selection. careerIds must be
+        unique and all reference known careers. An empty list clears all selections. Repeating a selection
+        is idempotent and preserves existing selectedAt timestamps. Validate the entire payload before
+        any write; unknown careers return 404. Requires a valid unexpired session cookie; missing, invalid
+        or expired sessions return 401 UNAUTHENTICATED.  Unsafe browser requests require an Origin matching
+        the configured frontend origin and must not have Sec-Fetch-Site: cross-site. An absent Origin
+        is allowed for non-browser clients; a present untrusted or null Origin is rejected with 403 FORBIDDEN.
+        The server derives the owner from the cookie and rejects extra body properties; callers cannot
+        set owner IDs, grades, verification or timestamps.'
+      tags:
+      - Learning progress
+      x-service-methods:
+      - setSelectedCareers
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserCareerPath'
+              example:
+              - userId: user-1
+                careerId: frontend
+                selectedAt: '2026-10-20T12:00:00.000Z'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectCareersInput'
+            example:
+              careerIds:
+              - frontend
+              - analyst
+  /progress:
+    get:
+      operationId: getProgress
+      summary: Read current learning progress or public preview
+      description: 'Returns one UserSkillProgress per shared skill with self-assessment, independent verification
+        and bestQuizScore. Signed-in responses belong solely to the cookie owner; public preview records
+        use a synthetic non-account owner. A valid cookie selects the current user; a missing, invalid
+        or expired cookie uses synthetic public preview data and never another real account. For anonymous
+        callers, the projection uses userId=preview, not_started for every skill, verified=false, bestQuizScore=null
+        and updatedAt=1970-01-01T00:00:00.000Z. It never projects a real account. '
+      tags:
+      - Learning progress
+      x-service-methods:
+      - getProgress
+      security:
+      - cookieSession: []
+      - {}
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSkillProgress'
+              examples:
+                signedIn:
+                  value:
+                  - userId: user-1
+                    skillId: html
+                    status: completed
+                    updatedAt: '2026-10-20T12:00:00.000Z'
+                    verified: false
+                    bestQuizScore: 60
+                anonymous:
+                  value:
+                  - userId: preview
+                    skillId: html
+                    status: not_started
+                    updatedAt: '1970-01-01T00:00:00.000Z'
+                    verified: false
+                    bestQuizScore: null
+  /me/progress/{skillId}:
+    put:
+      operationId: updateProgress
+      summary: Update my learning status
+      description: 'Updates only the current owner''s self-assessment to not_started, learning or completed.
+        All transitions are allowed regardless of prerequisites. A real change appends one server-timestamped
+        ProgressEvent; setting the same status again appends none. Verification and best scores remain
+        derived from attempts and cannot be overwritten. Unknown skills return 404. Requires a valid unexpired
+        session cookie; missing, invalid or expired sessions return 401 UNAUTHENTICATED.  Unsafe browser
+        requests require an Origin matching the configured frontend origin and must not have Sec-Fetch-Site:
+        cross-site. An absent Origin is allowed for non-browser clients; a present untrusted or null Origin
+        is rejected with 403 FORBIDDEN. The server derives the owner from the cookie and rejects extra
+        body properties; callers cannot set owner IDs, grades, verification or timestamps.'
+      tags:
+      - Learning progress
+      x-service-methods:
+      - updateProgress
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSkillProgress'
+              example:
+                userId: user-1
+                skillId: html
+                status: completed
+                updatedAt: '2026-10-20T12:00:00.000Z'
+                verified: false
+                bestQuizScore: 60
+      parameters:
+      - $ref: '#/components/parameters/SkillId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProgressBody'
+            example:
+              status: learning
+  /me/progress/history:
+    get:
+      operationId: getProgressHistory
+      summary: Read my learning status history
+      description: 'Returns only the current owner''s append-only dated status changes in chronological
+        order, with stable ties. No changes is an empty array. Server timestamps use UTC ISO 8601. No
+        owner filtering parameter is accepted. Requires a valid unexpired session cookie; missing, invalid
+        or expired sessions return 401 UNAUTHENTICATED. '
+      tags:
+      - Learning progress
+      x-service-methods:
+      - getProgressHistory
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProgressEvent'
+              example:
+              - id: progress-1
+                userId: user-1
+                skillId: html
+                fromStatus: not_started
+                toStatus: learning
+                changedAt: '2026-10-02T12:00:00.000Z'
+  /quizzes/{quizId}/attempts:
+    post:
+      operationId: submitQuizAttempt
+      summary: Submit and grade a quiz attempt
+      description: 'Validates exactly one response for every question: unique question IDs and option
+        IDs belonging to those questions. Grades on the server, passes when correctCount/totalQuestions
+        >= 0.8, stores every valid attempt and preserves the best score across unlimited retakes. A later
+        failure or self-assessment reset never erases prior verification. Correct options and explanations
+        are returned only in this submitted result. Every successful POST stores one new attempt; progress-refresh
+        retries must use read endpoints rather than resubmitting. No partial write occurs for malformed
+        responses. Unknown quizzes return 404. Requires a valid unexpired session cookie; missing, invalid
+        or expired sessions return 401 UNAUTHENTICATED.  Unsafe browser requests require an Origin matching
+        the configured frontend origin and must not have Sec-Fetch-Site: cross-site. An absent Origin
+        is allowed for non-browser clients; a present untrusted or null Origin is rejected with 403 FORBIDDEN.
+        The server derives the owner from the cookie and rejects extra body properties; callers cannot
+        set owner IDs, grades, verification or timestamps.'
+      tags:
+      - Quizzes
+      x-service-methods:
+      - submitQuizAttempt
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '201':
+          description: New stored attempt with graded feedback and explanations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResult'
+              example:
+                attempt:
+                  id: attempt-1
+                  userId: user-1
+                  quizId: quiz-html
+                  skillId: html
+                  responses:
+                  - questionId: html-q1
+                    optionId: html-q1-o2
+                  - questionId: html-q2
+                    optionId: html-q2-o4
+                  - questionId: html-q3
+                    optionId: html-q3-o1
+                  - questionId: html-q4
+                    optionId: html-q4-o1
+                  - questionId: html-q5
+                    optionId: html-q5-o1
+                  correctCount: 3
+                  totalQuestions: 5
+                  score: 60
+                  passed: false
+                  submittedAt: '2026-10-20T12:00:00.000Z'
+                feedback:
+                - questionId: html-q1
+                  selectedOptionId: html-q1-o2
+                  correctOptionId: html-q1-o2
+                  correct: true
+                  explanation: The main element identifies the dominant content of the document.
+                - questionId: html-q2
+                  selectedOptionId: html-q2-o4
+                  correctOptionId: html-q2-o4
+                  correct: true
+                  explanation: A label uses for to reference the input id.
+                - questionId: html-q3
+                  selectedOptionId: html-q3-o1
+                  correctOptionId: html-q3-o1
+                  correct: true
+                  explanation: Alternative text communicates the meaning when the image cannot be seen.
+                - questionId: html-q4
+                  selectedOptionId: html-q4-o1
+                  correctOptionId: html-q4-o3
+                  correct: false
+                  explanation: An anchor with href provides native link semantics and keyboard behavior.
+                - questionId: html-q5
+                  selectedOptionId: html-q5-o1
+                  correctOptionId: html-q5-o2
+                  correct: false
+                  explanation: The required attribute enables native required-field validation.
+      parameters:
+      - $ref: '#/components/parameters/QuizId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQuizBody'
+            example:
+              responses:
+              - questionId: html-q1
+                optionId: html-q1-o2
+              - questionId: html-q2
+                optionId: html-q2-o4
+              - questionId: html-q3
+                optionId: html-q3-o1
+              - questionId: html-q4
+                optionId: html-q4-o1
+              - questionId: html-q5
+                optionId: html-q5-o1
+  /me/quiz-attempts:
+    get:
+      operationId: getQuizAttempts
+      summary: Read my quiz attempt history
+      description: 'Returns only the current owner''s attempts in chronological order with stable ties,
+        optionally limited to one existing quiz. Unknown quiz filters return 404, a known quiz without
+        this owner''s attempts returns an empty array. This read does not reveal pre-submission grading
+        keys or explanations. No owner filtering parameter is accepted. Requires a valid unexpired session
+        cookie; missing, invalid or expired sessions return 401 UNAUTHENTICATED. '
+      tags:
+      - Quizzes
+      x-service-methods:
+      - getQuizAttempts
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuizAttempt'
+              example:
+              - id: attempt-1
+                userId: user-1
+                quizId: quiz-html
+                skillId: html
+                responses:
+                - questionId: html-q1
+                  optionId: html-q1-o2
+                - questionId: html-q2
+                  optionId: html-q2-o4
+                - questionId: html-q3
+                  optionId: html-q3-o1
+                - questionId: html-q4
+                  optionId: html-q4-o1
+                - questionId: html-q5
+                  optionId: html-q5-o1
+                correctCount: 3
+                totalQuestions: 5
+                score: 60
+                passed: false
+                submittedAt: '2026-10-20T12:00:00.000Z'
+      parameters:
+      - name: quizId
+        in: query
+        required: false
+        description: Optional existing quiz ID; omit for all of the current owner's attempts.
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 128
+        example: quiz-html
+  /me/analytics:
+    get:
+      operationId: getAnalytics
+      summary: Read my dashboard analytics
+      description: 'Computes global unique-skill completion/learning/verification, per-career progress,
+        quiz statistics and dated status history solely for the cookie owner. Shared skills count once
+        globally and once per relevant career; completion uses self-assessment while verification is independent.
+        Zero attempts produce null best/average scores, not a fabricated zero score. The frontend composes
+        the selected-career Dashboard by joining this response with my selections, public catalogue/current
+        progress and adapter recommendations; it must not treat global totals as selected-path totals.
+        History derives the completion chart; no quiz-verification timeline is fabricated. Requires a
+        valid unexpired session cookie; missing, invalid or expired sessions return 401 UNAUTHENTICATED. '
+      tags:
+      - Analytics
+      x-service-methods:
+      - getAnalytics
+      security:
+      - cookieSession: []
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '401':
+          $ref: '#/components/responses/UnauthenticatedError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Analytics'
+              example:
+                userId: user-1
+                totalSkills: 10
+                completedSkills: 1
+                learningSkills: 2
+                verifiedSkills: 0
+                careers:
+                - careerId: frontend
+                  totalSkills: 4
+                  completedSkills: 1
+                  verifiedSkills: 0
+                  completionPercent: 25
+                - careerId: backend
+                  totalSkills: 4
+                  completedSkills: 0
+                  verifiedSkills: 0
+                  completionPercent: 0
+                - careerId: analyst
+                  totalSkills: 4
+                  completedSkills: 0
+                  verifiedSkills: 0
+                  completionPercent: 0
+                quizzes:
+                  attemptCount: 1
+                  passedCount: 0
+                  bestScore: 60
+                  averageScore: 60
+                history:
+                - id: progress-1
+                  userId: user-1
+                  skillId: html
+                  fromStatus: not_started
+                  toStatus: learning
+                  changedAt: '2026-10-02T12:00:00.000Z'
+                - id: progress-2
+                  userId: user-1
+                  skillId: html
+                  fromStatus: learning
+                  toStatus: completed
+                  changedAt: '2026-10-03T12:00:00.000Z'
+                - id: progress-3
+                  userId: user-1
+                  skillId: css
+                  fromStatus: not_started
+                  toStatus: learning
+                  changedAt: '2026-10-04T12:00:00.000Z'
+                - id: progress-4
+                  userId: user-1
+                  skillId: python
+                  fromStatus: not_started
+                  toStatus: learning
+                  changedAt: '2026-10-05T12:00:00.000Z'
+  /career-paths/{careerId}/recommendations:
+    get:
+      operationId: getRecommendations
+      summary: Read explainable next-skill recommendations
+      description: 'Returns deterministic ranked recommendations for the career: exclude completed or
+        verified skills; require every direct prerequisite to be completed or verified; prioritize learning
+        skills and use authored career order to break ties. Each recommendation includes an explanation
+        and rank beginning at one. Completed careers may return an empty list; an unknown career returns
+        404. A valid cookie selects the current user; a missing, invalid or expired cookie uses synthetic
+        public preview data and never another real account. Anonymous recommendations use the same neutral
+        preview projection as GET /progress: every skill not_started and unverified, with no personal
+        attempt history. '
+      tags:
+      - Analytics
+      x-service-methods:
+      - getRecommendations
+      security:
+      - cookieSession: []
+      - {}
+      responses:
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recommendation'
+              example:
+              - careerId: frontend
+                skillId: css
+                rank: 1
+                priority: continue_learning
+                prerequisiteIds:
+                - html
+                reason: 'Continue learning CSS; prerequisites completed or verified: HTML.'
+      parameters:
+      - $ref: '#/components/parameters/CareerId'
+  /health:
+    get:
+      operationId: health
+      summary: Check service readiness
+      description: Reports whether the API can serve the configured development workflow. No authentication
+        or user data is required. Returns ok for a usable service; unavailable dependencies return 503
+        without exposing internals.
+      tags:
+      - Operations
+      security: []
+      x-service-methods: []
+      responses:
+        '200':
+          description: API is ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: ok
+        '503':
+          $ref: '#/components/responses/UnavailableError'
+components:
+  securitySchemes:
+    cookieSession:
+      type: apiKey
+      in: cookie
+      name: devatlas_session
+      description: 'Opaque random session token; only its digest is stored server-side. HttpOnly; SameSite=Lax;
+        Path=/api/v1; Secure in production. Fixed eight-hour expiry; login rotates and logout revokes
+        it. Never returned in JSON. Browser fetches use credentials: include. Production frontend and
+        API are same-site. Explicit credentialed CORS and Origin/Fetch Metadata checks protect unsafe
+        requests.'
+  parameters:
+    CareerId:
+      name: careerId
+      in: path
+      required: true
+      description: Shared catalogue career identifier.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: frontend
+    SkillId:
+      name: skillId
+      in: path
+      required: true
+      description: Shared catalogue skill identifier.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: html
+    QuizId:
+      name: quizId
+      in: path
+      required: true
+      description: Shared catalogue quiz identifier.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      example: quiz-html
+  responses:
+    ValidationError:
+      description: Malformed path/query/body input, duplicate IDs, unsupported fields or invalid references
+        within a quiz submission. No stack trace or secret material is returned.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION
+              message: Request validation failed.
+    UnavailableError:
+      description: A required service or persistence operation is unavailable; no internal details or
+        credentials are returned.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAVAILABLE
+              message: The service is temporarily unavailable. Please try again.
+    UnauthenticatedError:
+      description: A private operation requires a valid unexpired session. Missing, invalid, expired or
+        revoked cookies cannot identify a user.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHENTICATED
+              message: Sign in to use your personal data.
+    NotFoundError:
+      description: The requested career, skill or quiz does not exist. This never reveals another user's
+        private records.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: The requested catalogue item was not found.
+    EmailInUseError:
+      description: Registration conflicts with an existing normalized email address.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: EMAIL_IN_USE
+              message: An account with this email already exists.
+    InvalidCredentialsError:
+      description: Identical response for an unknown email and an incorrect password; no account-discovery
+        detail is returned.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: INVALID_CREDENTIALS
+              message: Email or password is incorrect.
+    ForbiddenError:
+      description: 'Unsafe browser request has a disallowed/null Origin or Sec-Fetch-Site: cross-site.
+        Missing Origin is allowed for non-browser clients.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: This request origin is not allowed.
+  schemas:
+    Id:
+      type: string
+      minLength: 1
+      maxLength: 128
+      pattern: \S
+      description: Opaque nonblank identifier, 1–128 characters. Clients must not infer ownership from
+        IDs.
+      example: html
+    Timestamp:
+      type: string
+      format: date-time
+      pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$
+      description: Canonical UTC ISO 8601 timestamp with millisecond precision and terminal Z, e.g. YYYY-MM-DDTHH:mm:ss.sssZ.
+        Generated by the server; clients may localize display.
+      example: '2026-10-20T12:00:00.000Z'
+    User:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - displayName
+      - email
+      - createdAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: \S
+          description: Display name, trimmed before validation and storage; the trimmed name has 1–80
+            characters.
+          example: Ada Student
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+          description: Email address; the server trims outer whitespace and normalizes case before comparison.
+            Duplicate email comparison is case-insensitive.
+          example: ada@example.test
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+      description: Public account details. Password hashes, salts, raw passwords and session secrets are
+        never included.
+      example:
+        id: user-1
+        displayName: Ada Student
+        email: ada@example.test
+        createdAt: '2026-10-01T12:00:00.000Z'
+    ApiSession:
+      type: object
+      additionalProperties: false
+      required:
+      - kind
+      - user
+      - authenticatedAt
+      properties:
+        kind:
+          type: string
+          const: http
+          example: http
+        user:
+          $ref: '#/components/schemas/User'
+        authenticatedAt:
+          $ref: '#/components/schemas/Timestamp'
+      description: Authenticated HTTP session metadata. The opaque session identifier is transported only
+        in the secure HttpOnly cookie; this response never exposes it. Frontend HTTP adapters use kind
+        http; mock sessions are not server sessions.
+      example:
+        kind: http
+        user:
+          id: user-1
+          displayName: Ada Student
+          email: ada@example.test
+          createdAt: '2026-10-01T12:00:00.000Z'
+        authenticatedAt: '2026-10-20T12:00:00.000Z'
+    LoginInput:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+          description: Email address; the server trims outer whitespace and normalizes case before comparison.
+            Duplicate email comparison is case-insensitive.
+          example: ada@example.test
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+          writeOnly: true
+          description: Exact password supplied by the user. Do not trim, normalize or change case. The
+            login endpoint accepts 1–128 characters for credential checking.
+          example: Learning123!
+      description: Login credentials. Email is normalized; password characters are preserved exactly.
+        The example password is disposable documentation data, not a seeded credential.
+      example:
+        email: ada@example.test
+        password: Learning123!
+    SignUpInput:
+      type: object
+      additionalProperties: false
+      required:
+      - email
+      - password
+      - displayName
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 3
+          maxLength: 254
+          description: Email address; the server trims outer whitespace and normalizes case before comparison.
+            Duplicate email comparison is case-insensitive.
+          example: ada@example.test
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          pattern: \S
+          writeOnly: true
+          description: New password, 8–128 characters with at least one non-whitespace character. Preserve
+            all password characters exactly; store only a secure salted hash.
+          example: Learning123!
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+          pattern: \S
+          description: Display name, trimmed before validation and storage; the trimmed name has 1–80
+            characters.
+          example: Ada Student
+      description: New account request. Validate normalized email uniqueness and trimmed display name.
+        Confirmation-password UI state is not part of the API. Never log or return the password.
+      example:
+        email: ada@example.test
+        password: Learning123!
+        displayName: Ada Student
+    CareerPath:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - description
+      - skillIds
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+          example: Frontend Developer
+          minLength: 1
+        description:
+          type: string
+          example: Build modern websites and interactive interfaces.
+        skillIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+          example:
+          - html
+          - css
+          - javascript
+          - react
+          uniqueItems: true
+      description: Shared career definition with ordered unique skill IDs. Every referenced skill must
+        exist; all direct prerequisites of a path skill must also belong to that path. The MVP seeds Frontend
+        Developer, Backend Developer and Data Analyst.
+      example:
+        id: frontend
+        name: Frontend Developer
+        description: Build modern websites and interactive interfaces.
+        skillIds:
+        - html
+        - css
+        - javascript
+        - react
+    Skill:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - description
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+          example: HTML
+          minLength: 1
+        description:
+          type: string
+          example: Structure accessible web content with semantic elements.
+      description: Shared skill definition. Self-assessment status and quiz verification belong to per-user
+        progress, never to the shared skill.
+      example:
+        id: html
+        name: HTML
+        description: Structure accessible web content with semantic elements.
+    SkillDependency:
+      type: object
+      additionalProperties: false
+      required:
+      - skillId
+      - prerequisiteId
+      properties:
+        skillId:
+          $ref: '#/components/schemas/Id'
+        prerequisiteId:
+          $ref: '#/components/schemas/Id'
+      description: Directed prerequisite edge from prerequisiteId to skillId. Both skills must exist;
+        self-edges, duplicate pairs and cycles are forbidden. Prerequisites are satisfied by completed
+        or quiz-verified progress.
+      example:
+        skillId: css
+        prerequisiteId: html
+    UserCareerPath:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - careerId
+      - selectedAt
+      properties:
+        userId:
+          $ref: '#/components/schemas/Id'
+        careerId:
+          $ref: '#/components/schemas/Id'
+        selectedAt:
+          $ref: '#/components/schemas/Timestamp'
+      description: Authenticated user career selection. Owner is derived from the session. The pair userId/careerId
+        is unique; repeating a retained selection preserves its selectedAt timestamp.
+      example:
+        userId: user-1
+        careerId: frontend
+        selectedAt: '2026-10-20T12:00:00.000Z'
+    UserSkillProgress:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - skillId
+      - status
+      - updatedAt
+      - verified
+      - bestQuizScore
+      properties:
+        userId:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        status:
+          type: string
+          enum:
+          - not_started
+          - learning
+          - completed
+          description: Self-assessed learning status. Any transition is allowed; quiz verification is
+            independent.
+          example: learning
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+        verified:
+          type: boolean
+          readOnly: true
+          description: Derived from at least one retained passing practice-quiz attempt; independent of
+            self-reported status.
+          example: false
+        bestQuizScore:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 100
+          description: Maximum retained quiz score for this skill and user, or null when no attempt exists.
+            A failed retake does not erase an earlier best score.
+          example: 60
+      description: Current authenticated-user progress for one existing skill. Each user/skill pair is
+        unique. Completion is self-reported; verification is derived server-side from attempts and cannot
+        be written by clients. updatedAt is the latest status-change or quiz-attempt timestamp.
+      example:
+        userId: user-1
+        skillId: html
+        status: completed
+        updatedAt: '2026-10-20T12:00:00.000Z'
+        verified: false
+        bestQuizScore: 60
+    ProgressEvent:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - userId
+      - skillId
+      - fromStatus
+      - toStatus
+      - changedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        userId:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        fromStatus:
+          type: string
+          enum:
+          - not_started
+          - learning
+          - completed
+          description: Self-assessed learning status. Any transition is allowed; quiz verification is
+            independent.
+          example: learning
+        toStatus:
+          type: string
+          enum:
+          - not_started
+          - learning
+          - completed
+          description: Self-assessed learning status. Any transition is allowed; quiz verification is
+            independent.
+          example: learning
+        changedAt:
+          $ref: '#/components/schemas/Timestamp'
+      description: Append-only current-user status change. fromStatus must equal the preceding known status;
+        fromStatus and toStatus must differ. Repeating the current status creates no event. Histories
+        are chronological; equal timestamps preserve event creation order.
+      example:
+        id: progress-1
+        userId: user-1
+        skillId: html
+        fromStatus: not_started
+        toStatus: learning
+        changedAt: '2026-10-02T12:00:00.000Z'
+    LearningResource:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - skillId
+      - title
+      - url
+      - kind
+      - isFree
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        title:
+          type: string
+          example: 'MDN: Structuring content with HTML'
+          minLength: 1
+        url:
+          type: string
+          format: uri
+          pattern: ^https://[^/?#@]+(?:[/?#].*)?$
+          description: Absolute HTTPS resource URL with a valid hostname and no username/password. Reject
+            executable schemes, plain HTTP and credential-bearing links.
+          example: https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content
+        kind:
+          type: string
+          enum:
+          - documentation
+          - course
+          - video
+          example: documentation
+        isFree:
+          type: boolean
+          description: Whether the material is free. The MVP learning UI presents free resources.
+          example: true
+      description: Curated learning material for an existing skill. Validate external URLs before returning
+        or rendering links; open external links safely.
+      example:
+        id: html-mdn
+        skillId: html
+        title: 'MDN: Structuring content with HTML'
+        url: https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content
+        kind: documentation
+        isFree: true
+    PracticeTask:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - skillId
+      - title
+      - description
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        title:
+          type: string
+          example: Semantic profile
+          minLength: 1
+        description:
+          type: string
+          example: Build a profile page with headings, landmarks, links, and a labelled form.
+      description: An example practical exercise attached to an existing skill.
+      example:
+        id: html-profile
+        skillId: html
+        title: Semantic profile
+        description: Build a profile page with headings, landmarks, links, and a labelled form.
+    QuizOption:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - text
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        text:
+          type: string
+          example: <span>
+          minLength: 1
+      description: Public answer option. No correctness flag or grading key is exposed before submission.
+      example:
+        id: html-q1-o1
+        text: <span>
+    QuizQuestion:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - prompt
+      - options
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        prompt:
+          type: string
+          example: Which element represents the primary page content?
+          minLength: 1
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizOption'
+          example:
+          - id: html-q1-o1
+            text: <span>
+          - id: html-q1-o2
+            text: <main>
+          - id: html-q1-o3
+            text: <style>
+          - id: html-q1-o4
+            text: <meta>
+          minItems: 4
+          maxItems: 4
+          uniqueItems: true
+      description: Public question with exactly four distinct answer options and one server-held correct
+        answer. Option IDs and texts are unique within the question. correctOptionId and explanations
+        are deliberately absent before submission.
+      example:
+        id: html-q1
+        prompt: Which element represents the primary page content?
+        options:
+        - id: html-q1-o1
+          text: <span>
+        - id: html-q1-o2
+          text: <main>
+        - id: html-q1-o3
+          text: <style>
+        - id: html-q1-o4
+          text: <meta>
+    Quiz:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - skillId
+      - title
+      - passThreshold
+      - questions
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        title:
+          type: string
+          example: HTML knowledge check
+          minLength: 1
+        passThreshold:
+          type: integer
+          const: 80
+          description: Required percentage correct; passing uses the exact correctCount/totalQuestions
+            ratio, not rounded display score.
+          example: 80
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+          example:
+          - id: html-q1
+            prompt: Which element represents the primary page content?
+            options:
+            - id: html-q1-o1
+              text: <span>
+            - id: html-q1-o2
+              text: <main>
+            - id: html-q1-o3
+              text: <style>
+            - id: html-q1-o4
+              text: <meta>
+          - id: html-q2
+            prompt: How is a visible label associated with an input?
+            options:
+            - id: html-q2-o1
+              text: Matching CSS classes
+            - id: html-q2-o2
+              text: A placeholder alone
+            - id: html-q2-o3
+              text: A title on the form
+            - id: html-q2-o4
+              text: Matching label for and input id
+          - id: html-q3
+            prompt: What should an informative image have?
+            options:
+            - id: html-q3-o1
+              text: Meaningful alternative text
+            - id: html-q3-o2
+              text: An empty file name
+            - id: html-q3-o3
+              text: A nested heading
+            - id: html-q3-o4
+              text: Only a background color
+          - id: html-q4
+            prompt: Which element provides native navigation to a URL?
+            options:
+            - id: html-q4-o1
+              text: <div onclick="...">
+            - id: html-q4-o2
+              text: <b>
+            - id: html-q4-o3
+              text: <a href="...">
+            - id: html-q4-o4
+              text: <section>
+          - id: html-q5
+            prompt: Which attribute marks a mandatory form field?
+            options:
+            - id: html-q5-o1
+              text: mandatory
+            - id: html-q5-o2
+              text: required
+            - id: html-q5-o3
+              text: checked
+            - id: html-q5-o4
+              text: selected
+          minItems: 5
+          maxItems: 10
+          uniqueItems: true
+      description: Public skill quiz with 5–10 questions, unique question IDs and exactly four options
+        per question. One quiz belongs to each seeded skill. Server-held answer keys and explanations
+        never appear in this response.
+      example:
+        id: quiz-html
+        skillId: html
+        title: HTML knowledge check
+        passThreshold: 80
+        questions:
+        - id: html-q1
+          prompt: Which element represents the primary page content?
+          options:
+          - id: html-q1-o1
+            text: <span>
+          - id: html-q1-o2
+            text: <main>
+          - id: html-q1-o3
+            text: <style>
+          - id: html-q1-o4
+            text: <meta>
+        - id: html-q2
+          prompt: How is a visible label associated with an input?
+          options:
+          - id: html-q2-o1
+            text: Matching CSS classes
+          - id: html-q2-o2
+            text: A placeholder alone
+          - id: html-q2-o3
+            text: A title on the form
+          - id: html-q2-o4
+            text: Matching label for and input id
+        - id: html-q3
+          prompt: What should an informative image have?
+          options:
+          - id: html-q3-o1
+            text: Meaningful alternative text
+          - id: html-q3-o2
+            text: An empty file name
+          - id: html-q3-o3
+            text: A nested heading
+          - id: html-q3-o4
+            text: Only a background color
+        - id: html-q4
+          prompt: Which element provides native navigation to a URL?
+          options:
+          - id: html-q4-o1
+            text: <div onclick="...">
+          - id: html-q4-o2
+            text: <b>
+          - id: html-q4-o3
+            text: <a href="...">
+          - id: html-q4-o4
+            text: <section>
+        - id: html-q5
+          prompt: Which attribute marks a mandatory form field?
+          options:
+          - id: html-q5-o1
+            text: mandatory
+          - id: html-q5-o2
+            text: required
+          - id: html-q5-o3
+            text: checked
+          - id: html-q5-o4
+            text: selected
+    QuizResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - questionId
+      - optionId
+      properties:
+        questionId:
+          $ref: '#/components/schemas/Id'
+        optionId:
+          $ref: '#/components/schemas/Id'
+      description: One selected option for one question. The question and option must belong to the submitted
+        quiz. Exactly one response per question is required; duplicate or foreign references are rejected
+        atomically.
+      example:
+        questionId: html-q1
+        optionId: html-q1-o2
+    QuizAttempt:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - userId
+      - quizId
+      - skillId
+      - responses
+      - correctCount
+      - totalQuestions
+      - score
+      - passed
+      - submittedAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        userId:
+          $ref: '#/components/schemas/Id'
+        quizId:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        responses:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizResponse'
+          example:
+          - questionId: html-q1
+            optionId: html-q1-o2
+          - questionId: html-q2
+            optionId: html-q2-o4
+          - questionId: html-q3
+            optionId: html-q3-o1
+          - questionId: html-q4
+            optionId: html-q4-o1
+          - questionId: html-q5
+            optionId: html-q5-o1
+          minItems: 5
+          maxItems: 10
+          uniqueItems: true
+        correctCount:
+          type: integer
+          minimum: 0
+          example: 3
+          maximum: 10
+        totalQuestions:
+          type: integer
+          minimum: 5
+          example: 5
+          maximum: 10
+        score:
+          type: integer
+          minimum: 0
+          example: 60
+          maximum: 100
+        passed:
+          type: boolean
+          example: false
+        submittedAt:
+          $ref: '#/components/schemas/Timestamp'
+      description: Retained current-user attempt graded by the server. totalQuestions equals this quiz
+        question count; 0 <= correctCount <= totalQuestions; score is round(correctCount/totalQuestions*100).
+        passed uses the exact ratio >= 0.8. All valid retakes are retained; owner and scores are never
+        supplied by clients. Response question IDs are unique and cover the complete quiz.
+      example:
+        id: attempt-1
+        userId: user-1
+        quizId: quiz-html
+        skillId: html
+        responses:
+        - questionId: html-q1
+          optionId: html-q1-o2
+        - questionId: html-q2
+          optionId: html-q2-o4
+        - questionId: html-q3
+          optionId: html-q3-o1
+        - questionId: html-q4
+          optionId: html-q4-o1
+        - questionId: html-q5
+          optionId: html-q5-o1
+        correctCount: 3
+        totalQuestions: 5
+        score: 60
+        passed: false
+        submittedAt: '2026-10-20T12:00:00.000Z'
+    QuizFeedback:
+      type: object
+      additionalProperties: false
+      required:
+      - questionId
+      - selectedOptionId
+      - correctOptionId
+      - correct
+      - explanation
+      properties:
+        questionId:
+          $ref: '#/components/schemas/Id'
+        selectedOptionId:
+          $ref: '#/components/schemas/Id'
+        correctOptionId:
+          $ref: '#/components/schemas/Id'
+        correct:
+          type: boolean
+          example: false
+        explanation:
+          type: string
+          example: An anchor with href provides native link semantics and keyboard behavior.
+          minLength: 1
+      description: Post-submission feedback for one answered question. Correct option and explanation
+        may be disclosed only in the completed submission result for the current user.
+      example:
+        questionId: html-q4
+        selectedOptionId: html-q4-o1
+        correctOptionId: html-q4-o3
+        correct: false
+        explanation: An anchor with href provides native link semantics and keyboard behavior.
+    QuizResult:
+      type: object
+      additionalProperties: false
+      required:
+      - attempt
+      - feedback
+      properties:
+        attempt:
+          $ref: '#/components/schemas/QuizAttempt'
+        feedback:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizFeedback'
+          example:
+          - questionId: html-q1
+            selectedOptionId: html-q1-o2
+            correctOptionId: html-q1-o2
+            correct: true
+            explanation: The main element identifies the dominant content of the document.
+          - questionId: html-q2
+            selectedOptionId: html-q2-o4
+            correctOptionId: html-q2-o4
+            correct: true
+            explanation: A label uses for to reference the input id.
+          - questionId: html-q3
+            selectedOptionId: html-q3-o1
+            correctOptionId: html-q3-o1
+            correct: true
+            explanation: Alternative text communicates the meaning when the image cannot be seen.
+          - questionId: html-q4
+            selectedOptionId: html-q4-o1
+            correctOptionId: html-q4-o3
+            correct: false
+            explanation: An anchor with href provides native link semantics and keyboard behavior.
+          - questionId: html-q5
+            selectedOptionId: html-q5-o1
+            correctOptionId: html-q5-o2
+            correct: false
+            explanation: The required attribute enables native required-field validation.
+          minItems: 5
+          maxItems: 10
+          uniqueItems: true
+      description: Server-graded submission result. Feedback covers every question exactly once and agrees
+        with the stored attempt; rejected submissions create no attempt and disclose no grading key.
+      example:
+        attempt:
+          id: attempt-1
+          userId: user-1
+          quizId: quiz-html
+          skillId: html
+          responses:
+          - questionId: html-q1
+            optionId: html-q1-o2
+          - questionId: html-q2
+            optionId: html-q2-o4
+          - questionId: html-q3
+            optionId: html-q3-o1
+          - questionId: html-q4
+            optionId: html-q4-o1
+          - questionId: html-q5
+            optionId: html-q5-o1
+          correctCount: 3
+          totalQuestions: 5
+          score: 60
+          passed: false
+          submittedAt: '2026-10-20T12:00:00.000Z'
+        feedback:
+        - questionId: html-q1
+          selectedOptionId: html-q1-o2
+          correctOptionId: html-q1-o2
+          correct: true
+          explanation: The main element identifies the dominant content of the document.
+        - questionId: html-q2
+          selectedOptionId: html-q2-o4
+          correctOptionId: html-q2-o4
+          correct: true
+          explanation: A label uses for to reference the input id.
+        - questionId: html-q3
+          selectedOptionId: html-q3-o1
+          correctOptionId: html-q3-o1
+          correct: true
+          explanation: Alternative text communicates the meaning when the image cannot be seen.
+        - questionId: html-q4
+          selectedOptionId: html-q4-o1
+          correctOptionId: html-q4-o3
+          correct: false
+          explanation: An anchor with href provides native link semantics and keyboard behavior.
+        - questionId: html-q5
+          selectedOptionId: html-q5-o1
+          correctOptionId: html-q5-o2
+          correct: false
+          explanation: The required attribute enables native required-field validation.
+    CareerProgress:
+      type: object
+      additionalProperties: false
+      required:
+      - careerId
+      - totalSkills
+      - completedSkills
+      - verifiedSkills
+      - completionPercent
+      properties:
+        careerId:
+          $ref: '#/components/schemas/Id'
+        totalSkills:
+          type: integer
+          minimum: 0
+          example: 4
+        completedSkills:
+          type: integer
+          minimum: 0
+          example: 1
+        verifiedSkills:
+          type: integer
+          minimum: 0
+          example: 0
+        completionPercent:
+          type: integer
+          minimum: 0
+          example: 25
+          maximum: 100
+      description: Per-career current-user progress. Counts use unique skills in this career; completionPercent
+        is rounded completedSkills/totalSkills*100, or zero for an empty path. Verification is independent
+        of self-assessment and is not professional certification.
+      example:
+        careerId: frontend
+        totalSkills: 4
+        completedSkills: 1
+        verifiedSkills: 0
+        completionPercent: 25
+    QuizStatistics:
+      type: object
+      additionalProperties: false
+      required:
+      - attemptCount
+      - passedCount
+      - bestScore
+      - averageScore
+      properties:
+        attemptCount:
+          type: integer
+          minimum: 0
+          example: 1
+        passedCount:
+          type: integer
+          minimum: 0
+          example: 0
+        bestScore:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 100
+          description: Maximum retained score, or null when attemptCount is zero.
+          example: 60
+        averageScore:
+          type:
+          - number
+          - 'null'
+          minimum: 0
+          maximum: 100
+          description: Rounded arithmetic mean of retained attempt scores, or null when attemptCount is
+            zero.
+          example: 60
+      description: Aggregates over all current-user quiz attempts. passedCount cannot exceed attemptCount.
+        Failed retakes remain included in counts and averages without erasing the best score.
+      example:
+        attemptCount: 1
+        passedCount: 0
+        bestScore: 60
+        averageScore: 60
+    Analytics:
+      type: object
+      additionalProperties: false
+      required:
+      - userId
+      - totalSkills
+      - completedSkills
+      - learningSkills
+      - verifiedSkills
+      - careers
+      - quizzes
+      - history
+      properties:
+        userId:
+          $ref: '#/components/schemas/Id'
+        totalSkills:
+          type: integer
+          minimum: 0
+          example: 10
+        completedSkills:
+          type: integer
+          minimum: 0
+          example: 1
+        learningSkills:
+          type: integer
+          minimum: 0
+          example: 2
+        verifiedSkills:
+          type: integer
+          minimum: 0
+          example: 0
+        careers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CareerProgress'
+          example:
+          - careerId: frontend
+            totalSkills: 4
+            completedSkills: 1
+            verifiedSkills: 0
+            completionPercent: 25
+          - careerId: backend
+            totalSkills: 4
+            completedSkills: 0
+            verifiedSkills: 0
+            completionPercent: 0
+          - careerId: analyst
+            totalSkills: 4
+            completedSkills: 0
+            verifiedSkills: 0
+            completionPercent: 0
+          uniqueItems: true
+        quizzes:
+          $ref: '#/components/schemas/QuizStatistics'
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProgressEvent'
+          example:
+          - id: progress-1
+            userId: user-1
+            skillId: html
+            fromStatus: not_started
+            toStatus: learning
+            changedAt: '2026-10-02T12:00:00.000Z'
+          - id: progress-2
+            userId: user-1
+            skillId: html
+            fromStatus: learning
+            toStatus: completed
+            changedAt: '2026-10-03T12:00:00.000Z'
+          - id: progress-3
+            userId: user-1
+            skillId: css
+            fromStatus: not_started
+            toStatus: learning
+            changedAt: '2026-10-04T12:00:00.000Z'
+          - id: progress-4
+            userId: user-1
+            skillId: python
+            fromStatus: not_started
+            toStatus: learning
+            changedAt: '2026-10-05T12:00:00.000Z'
+          uniqueItems: true
+      description: Authenticated-user global analytics. Shared skills are counted once globally, while
+        appearing in every relevant per-career summary. Counts agree with current progress and retained
+        attempts. history is chronologically ordered with stable equal-timestamp creation order and contains
+        only this user. Status histories describe self-assessment; quiz verification remains a separate
+        count.
+      example:
+        userId: user-1
+        totalSkills: 10
+        completedSkills: 1
+        learningSkills: 2
+        verifiedSkills: 0
+        careers:
+        - careerId: frontend
+          totalSkills: 4
+          completedSkills: 1
+          verifiedSkills: 0
+          completionPercent: 25
+        - careerId: backend
+          totalSkills: 4
+          completedSkills: 0
+          verifiedSkills: 0
+          completionPercent: 0
+        - careerId: analyst
+          totalSkills: 4
+          completedSkills: 0
+          verifiedSkills: 0
+          completionPercent: 0
+        quizzes:
+          attemptCount: 1
+          passedCount: 0
+          bestScore: 60
+          averageScore: 60
+        history:
+        - id: progress-1
+          userId: user-1
+          skillId: html
+          fromStatus: not_started
+          toStatus: learning
+          changedAt: '2026-10-02T12:00:00.000Z'
+        - id: progress-2
+          userId: user-1
+          skillId: html
+          fromStatus: learning
+          toStatus: completed
+          changedAt: '2026-10-03T12:00:00.000Z'
+        - id: progress-3
+          userId: user-1
+          skillId: css
+          fromStatus: not_started
+          toStatus: learning
+          changedAt: '2026-10-04T12:00:00.000Z'
+        - id: progress-4
+          userId: user-1
+          skillId: python
+          fromStatus: not_started
+          toStatus: learning
+          changedAt: '2026-10-05T12:00:00.000Z'
+    Recommendation:
+      type: object
+      additionalProperties: false
+      required:
+      - careerId
+      - skillId
+      - rank
+      - priority
+      - prerequisiteIds
+      - reason
+      properties:
+        careerId:
+          $ref: '#/components/schemas/Id'
+        skillId:
+          $ref: '#/components/schemas/Id'
+        rank:
+          type: integer
+          minimum: 1
+          example: 1
+        priority:
+          type: string
+          enum:
+          - continue_learning
+          - start_next
+          example: continue_learning
+        prerequisiteIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+          example:
+          - html
+          uniqueItems: true
+        reason:
+          type: string
+          example: 'Continue learning CSS; prerequisites completed or verified: HTML.'
+          minLength: 1
+      description: Deterministic eligible next skill for one career. Exclude completed or verified skills
+        and any skill with unsatisfied direct prerequisites. Eligible learning skills precede new skills;
+        authored career order breaks ties. Rank starts at one; each recommendation includes an explainable
+        reason.
+      example:
+        careerId: frontend
+        skillId: css
+        rank: 1
+        priority: continue_learning
+        prerequisiteIds:
+        - html
+        reason: 'Continue learning CSS; prerequisites completed or verified: HTML.'
+    SelectCareersInput:
+      type: object
+      additionalProperties: false
+      required:
+      - careerIds
+      properties:
+        careerIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+          example:
+          - frontend
+          - analyst
+          uniqueItems: true
+      description: Replace the current authenticated user's complete selected-career set. All IDs must
+        exist and be unique. An empty array clears selections. Reject the complete request before changing
+        state if any ID is invalid; the client cannot submit userId.
+      example:
+        careerIds:
+        - frontend
+        - analyst
+    UpdateProgressBody:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - not_started
+          - learning
+          - completed
+          description: Self-assessed learning status. Any transition is allowed; quiz verification is
+            independent.
+          example: learning
+      description: Set the current user's self-assessed status for the skill ID in the path. All transitions
+        are allowed. The server records a dated event only for an actual change. skillId is supplied in
+        the path; userId, verified, best score and timestamps are forbidden request fields.
+      example:
+        status: learning
+    SubmitQuizBody:
+      type: object
+      additionalProperties: false
+      required:
+      - responses
+      properties:
+        responses:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizResponse'
+          example:
+          - questionId: html-q1
+            optionId: html-q1-o2
+          - questionId: html-q2
+            optionId: html-q2-o4
+          - questionId: html-q3
+            optionId: html-q3-o1
+          - questionId: html-q4
+            optionId: html-q4-o1
+          - questionId: html-q5
+            optionId: html-q5-o1
+          minItems: 5
+          maxItems: 10
+          uniqueItems: true
+      description: Submit exactly one selected option per question for the quiz ID in the path. Question
+        IDs must be unique and options must belong to their questions. The server validates the complete
+        request, grades it and stores one current-user attempt atomically. quizId is supplied in the path;
+        userId, score, passed, correctCount, answer keys and timestamps are forbidden request fields.
+      example:
+        responses:
+        - questionId: html-q1
+          optionId: html-q1-o2
+        - questionId: html-q2
+          optionId: html-q2-o4
+        - questionId: html-q3
+          optionId: html-q3-o1
+        - questionId: html-q4
+          optionId: html-q4-o1
+        - questionId: html-q5
+          optionId: html-q5-o1
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - VALIDATION
+              - NOT_FOUND
+              - UNAVAILABLE
+              - INVALID_CREDENTIALS
+              - EMAIL_IN_USE
+              - UNAUTHENTICATED
+              - FORBIDDEN
+              example: UNAUTHENTICATED
+            message:
+              type: string
+              example: Sign in to access your personal learning data.
+              minLength: 1
+          description: Stable API error code and safe human-readable message; never include stack traces,
+            credentials or quiz grading keys.
+          example:
+            code: UNAUTHENTICATED
+            message: Sign in to access your personal learning data.
+      description: Consistent API error envelope. HTTP status identifies the class of failure. SESSION_CHANGED
+        is a client/mock lifecycle error and is not a server code. Validate unsupported fields and ownership
+        before mutation; errors never imply a partially stored attempt.
+      example:
+        error:
+          code: UNAUTHENTICATED
+          message: Sign in to access your personal learning data.
+    Health:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          const: ok
+      example:
+        status: ok

@@ -4,15 +4,15 @@ Verified snapshot: **2026-10-20, Asia/Qyzylorda**. This records observed GitHub/
 
 ## Current checkpoint
 
-- Issues #1–#7 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) and [#31](https://github.com/Nurdauleterbool/devatlas/pull/31) and [#32](https://github.com/Nurdauleterbool/devatlas/pull/32) and [#33](https://github.com/Nurdauleterbool/devatlas/pull/33) are merged.
+- Issues #1–#8 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) and [#31](https://github.com/Nurdauleterbool/devatlas/pull/31) and [#32](https://github.com/Nurdauleterbool/devatlas/pull/32) and [#33](https://github.com/Nurdauleterbool/devatlas/pull/33) and [#34](https://github.com/Nurdauleterbool/devatlas/pull/34) are merged.
 - Issue #4 merged as `1591dbd31fee1f827f322ecc81cfaab7006ed051`; its final implementation `eb2720e43377c65616c63b7782c00a78df1b5a1a` was verified as an ancestor of fetched origin/main before QA closed the issue.
 - GitHub API access now works using the existing injected authentication. The earlier network blocker is resolved by observed successful PR creation, merge and issue closure. No token was requested or copied.
-- Issue #5 merged as 737dab91c66ca0b6ee90741a29e00122ecee9b3d and closed after verifying implementation c4344bb in main. Issue #6 merged in PR #32 as 54e7ff4ae65dff7248ee632d03499df2f2fb57ac and closed after confirming implementation 7c38822 in main. Issue #7 merged as ceeb52291e6be6974c7079a5323f67fbafd91b57 and closed after confirming implementation 73be578 in main. Issue #8 is in progress on feat/issue-8-analytics-history. Required MVP: **22 issues**, **7 closed**, **15 open (#8–#22)**. Post-MVP #23–#26 remain excluded.
+- Issue #5 merged as 737dab91c66ca0b6ee90741a29e00122ecee9b3d and closed after verifying implementation c4344bb in main. Issue #6 merged in PR #32 as 54e7ff4ae65dff7248ee632d03499df2f2fb57ac and closed after confirming implementation 7c38822 in main. Issue #7 merged as ceeb52291e6be6974c7079a5323f67fbafd91b57 and closed after confirming implementation 73be578 in main. Issue #8 merged in PR #34 as bb626f271f23b8a81606ecfd8ac766ebfdcaada2; exact reviewed head 9896348 was verified in fetched main before closure. Issue #9 is in progress on feat/issue-9-openapi-contract. Required MVP: **22 issues**, **8 closed**, **14 open (#9–#22)**. Post-MVP #23–#26 remain excluded.
 - The full MVP remains under development; backend, persistence and HTTP integration are later stages.
 
 ## Live backlog and dependencies
 
-The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #8 is dependency-ready after #7 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
+The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #9 is dependency-ready after #8 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
 
 | Issue | Stage | Direct dependencies | Verified status |
 | --- | --- | --- | --- |
@@ -23,8 +23,8 @@ The full descriptions, acceptance criteria, labels and dependencies were read fr
 | [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | CLOSED; merged PR #31 |
 | [#6](https://github.com/Nurdauleterbool/devatlas/issues/6) — Build skill detail and resources UI | Mock frontend | #2, #5 | CLOSED; merged PR #32 |
 | [#7](https://github.com/Nurdauleterbool/devatlas/issues/7) — Build quiz and results UI | Mock frontend | #2, #6 | CLOSED; merged PR #33 |
-| [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | OPEN; implementation and QA complete, awaiting verified merge |
-| [#9](https://github.com/Nurdauleterbool/devatlas/issues/9) — Specify OpenAPI contract and example payloads | API contract | #2, #3, #4, #5, #6, #7, #8 | OPEN; dependency blocked |
+| [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | CLOSED; merged PR #34 |
+| [#9](https://github.com/Nurdauleterbool/devatlas/issues/9) — Specify OpenAPI contract and example payloads | API contract | #2, #3, #4, #5, #6, #7, #8 | OPEN; implementation in progress |
 | [#10](https://github.com/Nurdauleterbool/devatlas/issues/10) — Scaffold FastAPI and in-memory repositories | In-memory backend | #9 | OPEN; dependency blocked |
 | [#11](https://github.com/Nurdauleterbool/devatlas/issues/11) — Implement auth and user ownership checks | In-memory backend | #10 | OPEN; dependency blocked |
 | [#12](https://github.com/Nurdauleterbool/devatlas/issues/12) — Implement paths, skills and dependency graph endpoints | In-memory backend | #10, #11 | OPEN; dependency blocked |
@@ -64,7 +64,7 @@ System Chromium 154.0.8037.57 was used. All suites actually executed; no environ
 
 The earlier api.github.com CONNECT/403 blocker is resolved: PR #30 was created, its state was checked as MERGEABLE/CLEAN with no configured checks, and the independently reviewed, fully tested exact head was merged without bypassing protections. Only afterward was #4 closed through the API. Existing GitHub authentication supports the requested operations.
 
-Current development: #8 analytics/history UI, based on verified merged #7. Finish and validate the full frontend before specifying contract #9 and implementing the backend. No post-MVP implementation is authorized.
+Current development: #9 OpenAPI contract, based on the fully verified frontend through #8. Backend implementation starts only after this contract is reviewed and merged. No post-MVP implementation is authorized.
 
 ## Completed issue evidence
 
@@ -94,8 +94,15 @@ Quiz form/results with 5–10 questions/four choices, service grading at 80%, qu
 Build/lint PASS; 215 unit tests PASS in 10 files; 59 Chromium browser tests PASS / 0 failed/skipped in 1.0m. Fifteen new model tests and eight browser cases cover public/private boundaries, grade thresholds/retakes, retry/duplicate/navigation cases and 320–1280px layouts. Independent code and keyboard QA approved. Exact 79% is unrepresentable for 5–10 equally weighted questions; the actual 60/80% boundary was tested. PR #33 is MERGED, implementation 73be578 verified in fetched main, and #7 closed afterward. Next is #8.
 
 
-## Issue #8 — implementation and QA complete
+## Issue #8 — completed
 
 Personal analytics, real-event completion chart with exact data table, global/per-career summaries and chronological owned learning/quiz histories. Handles resets, pre-existing completions, equal timestamps, empty accounts and background-save refresh. Full details: issue-8-qa.md.
 
-Build/lint PASS; 232 unit tests PASS in 11 files; 66 Chromium browser tests PASS / 0 failed/skipped in 1.3m. Seventeen new model tests and seven browser cases cover historical aggregation, ownership, actual writes, retries and 320–1280px layouts. Independent code review approved. Issue remains open pending reviewed integration and verification in main.
+Build/lint PASS; 232 unit tests PASS in 11 files; 66 Chromium browser tests PASS / 0 failed/skipped in 1.3m. Seventeen new model tests and seven browser cases cover historical aggregation, ownership, actual writes, retries and 320–1280px layouts. Independent code review approved. Independent visual and keyboard review also passed. PR #34 is MERGED; head 9896348 is present in fetched main, and #8 closed afterward. Next is #9.
+
+
+## Issue #9 — contract and QA complete
+
+OpenAPI3.1 contract, all service mappings, typed examples/errors and explicit cookie/ownership/public-preview semantics. Validation tooling uses isolated pinned Python dependencies; no backend is implemented yet. Full evidence: issue-9-qa.md.
+
+Contract validator PASS: 23 operations, 228 schemas/subschemas and 132 examples. Four deliberate negative cases were rejected. pip check and whitespace check PASS. Independent review approved and reran the validator. Awaiting verified merge before starting #10.
