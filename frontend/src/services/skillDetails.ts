@@ -40,7 +40,7 @@ export function safeResourceUrl(value: string): string | null {
   }
 }
 
-function publicQuiz(quiz: Quiz | undefined, skillId: string): Quiz | undefined {
+export function publicQuiz(quiz: Quiz | undefined, skillId: string): Quiz | undefined {
   if (quiz === undefined) return undefined
   if (!quiz || quiz.skillId !== skillId || !nonempty(quiz.id) || !nonempty(quiz.title)
     || !Number.isFinite(quiz.passThreshold) || quiz.passThreshold < 0 || quiz.passThreshold > 100 || !Array.isArray(quiz.questions)) {

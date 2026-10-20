@@ -8,6 +8,8 @@ Issue #5 adds a lazy-loaded React Flow graph built from the existing career work
 
 Issue #6 shares resource/actionable skill details between the graph modal and standalone routes. Typed composition filters unsafe material and public quiz fields. Workspace-owned progress writes serialize across route remounts; serialized refreshes reconcile Dashboard, graph and detail progress while preserving unsaved form drafts. See [skill detail QA](issue-6-qa.md).
 
+Issue #7 adds service-graded quiz taking/results, owned attempt metadata, best-score retention and safe refresh retries. Public quiz whitelisting is shared with skill details; scoring and correct answers remain behind the service response boundary. The mock is not a production anti-cheating boundary. See [quiz QA](issue-7-qa.md).
+
 ## Modules
 - React pages: Auth, Dashboard, Career Paths, Skill Graph, Skill Detail, Quiz, History/Profile.
 - Typed frontend service interface: `mockService` initially, `httpService` after integration.
