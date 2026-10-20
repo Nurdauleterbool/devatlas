@@ -1,6 +1,6 @@
 # DevAtlas
 
-DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. Mock authentication, career selection, skill graphs/materials and quiz-taking are implemented. FastAPI, SQLAlchemy/SQLite, production authentication and persistent personal progress are planned.
+DevAtlas is an IT Career & Skill Gap Analyzer for IT students. The current implementation is a **frontend with a typed in-memory mock service**: React, TypeScript, Vite, Tailwind CSS and React Router. Mock authentication, career selection, skill graphs/materials, quizzes and personal analytics are implemented. FastAPI, SQLAlchemy/SQLite, production authentication and persistent personal progress are planned.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ Open the address printed by Vite. To serve on a specific interface, use `npm run
 | `/learning` — Learning | Ten unique skills with free resources, practice exercises and personal status controls |
 | `/skills/:skillId` — Skill details | Prerequisites, safe resource links, practice and quiz entry |
 | `/skills/:skillId/quiz` — Practice quiz | Questions, service-graded results/explanations, retakes, best score and independent verification |
-| `/analytics` — Analytics | Placeholder |
+| `/analytics` — Analytics | Personal unique-skill totals, career progress, dated completion chart, learning history and all quiz attempts |
 | `/login`, `/signup` — Account | Accessible mock login, registration, demo sign-in and session states |
 
 Unknown routes show a page-not-found screen. The desktop sidebar and mobile modal drawer link to all five routes. Navigation supports visible keyboard focus, a skip link, an active-route indicator, Escape dismissal and focus restoration. Visitors see explicitly labelled sample progress. Registered mock users have their own in-memory progress; switching accounts refreshes personalized views. Career selections are saved through the service for the current mock instance and update the Dashboard after confirmation. Shared skills count once across selected paths.

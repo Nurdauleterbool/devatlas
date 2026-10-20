@@ -21,6 +21,7 @@ import { useAuth } from './auth/authContext'
 const SkillGraphPage = lazy(() => import('./pages/SkillGraphPage'))
 const SkillDetailPage = lazy(() => import('./pages/SkillDetailPage'))
 const QuizPage = lazy(() => import('./pages/QuizPage'))
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 
 export default function App() {
   const { session } = useAuth()
@@ -126,12 +127,7 @@ export default function App() {
 
               <Route
                 path="/analytics"
-                element={
-                  <PlaceholderPage
-                    title="Analytics"
-                    description="Track skill progress, quiz scores and learning history."
-                  />
-                }
+                element={<Suspense fallback={<p role="status" className="p-6 text-slate-400">Loading analytics…</p>}><AnalyticsPage key={dataKey} /></Suspense>}
               />
 
               <Route

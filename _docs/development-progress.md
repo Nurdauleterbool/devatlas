@@ -4,15 +4,15 @@ Verified snapshot: **2026-10-20, Asia/Qyzylorda**. This records observed GitHub/
 
 ## Current checkpoint
 
-- Issues #1–#6 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) and [#31](https://github.com/Nurdauleterbool/devatlas/pull/31) and [#32](https://github.com/Nurdauleterbool/devatlas/pull/32) are merged.
+- Issues #1–#7 are **CLOSED / COMPLETED**. PRs [#27](https://github.com/Nurdauleterbool/devatlas/pull/27), [#28](https://github.com/Nurdauleterbool/devatlas/pull/28), [#29](https://github.com/Nurdauleterbool/devatlas/pull/29) [#30](https://github.com/Nurdauleterbool/devatlas/pull/30) and [#31](https://github.com/Nurdauleterbool/devatlas/pull/31) and [#32](https://github.com/Nurdauleterbool/devatlas/pull/32) and [#33](https://github.com/Nurdauleterbool/devatlas/pull/33) are merged.
 - Issue #4 merged as `1591dbd31fee1f827f322ecc81cfaab7006ed051`; its final implementation `eb2720e43377c65616c63b7782c00a78df1b5a1a` was verified as an ancestor of fetched origin/main before QA closed the issue.
 - GitHub API access now works using the existing injected authentication. The earlier network blocker is resolved by observed successful PR creation, merge and issue closure. No token was requested or copied.
-- Issue #5 merged as 737dab91c66ca0b6ee90741a29e00122ecee9b3d and closed after verifying implementation c4344bb in main. Issue #6 merged in PR #32 as 54e7ff4ae65dff7248ee632d03499df2f2fb57ac and closed after confirming implementation 7c38822 in main. Issue #7 is in progress on feat/issue-7-quiz-results. Required MVP: **22 issues**, **6 closed**, **16 open (#7–#22)**. Post-MVP #23–#26 remain excluded.
+- Issue #5 merged as 737dab91c66ca0b6ee90741a29e00122ecee9b3d and closed after verifying implementation c4344bb in main. Issue #6 merged in PR #32 as 54e7ff4ae65dff7248ee632d03499df2f2fb57ac and closed after confirming implementation 7c38822 in main. Issue #7 merged as ceeb52291e6be6974c7079a5323f67fbafd91b57 and closed after confirming implementation 73be578 in main. Issue #8 is in progress on feat/issue-8-analytics-history. Required MVP: **22 issues**, **7 closed**, **15 open (#8–#22)**. Post-MVP #23–#26 remain excluded.
 - The full MVP remains under development; backend, persistence and HTTP integration are later stages.
 
 ## Live backlog and dependencies
 
-The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #7 is dependency-ready after #6 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
+The full descriptions, acceptance criteria, labels and dependencies were read from each actual GitHub issue, rather than inferred from the older draft backlog. Issue #8 is dependency-ready after #7 merged. Continue sequentially through frontend #5–#8, contract #9, in-memory backend, persistence, integration and QA. Do not start later stages early.
 
 | Issue | Stage | Direct dependencies | Verified status |
 | --- | --- | --- | --- |
@@ -22,8 +22,8 @@ The full descriptions, acceptance criteria, labels and dependencies were read fr
 | [#4](https://github.com/Nurdauleterbool/devatlas/issues/4) — Build career selection and dashboard UI | Mock frontend | #1, #2, #3 | CLOSED; merged PR #30 |
 | [#5](https://github.com/Nurdauleterbool/devatlas/issues/5) — Implement interactive dependency graph UI | Mock frontend | #1, #2, #4 | CLOSED; merged PR #31 |
 | [#6](https://github.com/Nurdauleterbool/devatlas/issues/6) — Build skill detail and resources UI | Mock frontend | #2, #5 | CLOSED; merged PR #32 |
-| [#7](https://github.com/Nurdauleterbool/devatlas/issues/7) — Build quiz and results UI | Mock frontend | #2, #6 | OPEN; implementation in progress |
-| [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | OPEN; dependency blocked |
+| [#7](https://github.com/Nurdauleterbool/devatlas/issues/7) — Build quiz and results UI | Mock frontend | #2, #6 | CLOSED; merged PR #33 |
+| [#8](https://github.com/Nurdauleterbool/devatlas/issues/8) — Build progress analytics and history UI | Mock frontend | #2, #4, #7 | OPEN; implementation and QA complete, awaiting verified merge |
 | [#9](https://github.com/Nurdauleterbool/devatlas/issues/9) — Specify OpenAPI contract and example payloads | API contract | #2, #3, #4, #5, #6, #7, #8 | OPEN; dependency blocked |
 | [#10](https://github.com/Nurdauleterbool/devatlas/issues/10) — Scaffold FastAPI and in-memory repositories | In-memory backend | #9 | OPEN; dependency blocked |
 | [#11](https://github.com/Nurdauleterbool/devatlas/issues/11) — Implement auth and user ownership checks | In-memory backend | #10 | OPEN; dependency blocked |
@@ -64,7 +64,7 @@ System Chromium 154.0.8037.57 was used. All suites actually executed; no environ
 
 The earlier api.github.com CONNECT/403 blocker is resolved: PR #30 was created, its state was checked as MERGEABLE/CLEAN with no configured checks, and the independently reviewed, fully tested exact head was merged without bypassing protections. Only afterward was #4 closed through the API. Existing GitHub authentication supports the requested operations.
 
-Current development: #7 quiz/results UI, based on verified merged #6. Continue #8 analytics after its integration, then contract #9 before backend code. No post-MVP implementation is authorized.
+Current development: #8 analytics/history UI, based on verified merged #7. Finish and validate the full frontend before specifying contract #9 and implementing the backend. No post-MVP implementation is authorized.
 
 ## Completed issue evidence
 
@@ -87,8 +87,15 @@ Shared full skill detail in graph/standalone routes, Learning catalogue, safe fr
 Build/lint PASS; 200 unit tests PASS in 9 files; 51 Chromium browser tests PASS / 0 failed/skipped in 54.8s. Eleven new browser cases cover resources, navigation, status/graph/dashboard propagation, user isolation, duplicate/error/retry behavior, 320–1280px layout and three deterministic mutation regressions. All 10 external resource HEAD requests returned HTTP 200. Independent QA approved. PR #32 is MERGED; implementation 7c38822 was verified in fetched main and #6 closed afterward. Next is #7.
 
 
-## Issue #7 — implementation awaiting integration
+## Issue #7 — completed
 
-Quiz form/results with 5–10 questions/four choices, service grading at80%, question explanations after submission, retakes/best scores and shared verification refresh. Preserves recorded results through refresh failures and never re-submits on refresh retry. Full changed files/coverage: issue-7-qa.md.
+Quiz form/results with 5–10 questions/four choices, service grading at 80%, question explanations after submission, retakes/best scores and shared verification refresh. Preserves recorded results through refresh failures and never re-submits on refresh retry. Full changed files/coverage: issue-7-qa.md.
 
-Build/lint PASS; 215 unit tests PASS in10files; 59 Chromium browser tests PASS / 0 failed/skipped in1.0m. Fifteen new model tests and eight browser cases cover public/private boundaries, grade thresholds/retakes, retry/duplicate/navigation cases and 320–1280px layouts. Independent code and keyboard QA approved. Exact79% is unrepresentable for5–10 equallyweighted questions; actual60/80% boundary tested. Next is #8 after verified integration.
+Build/lint PASS; 215 unit tests PASS in 10 files; 59 Chromium browser tests PASS / 0 failed/skipped in 1.0m. Fifteen new model tests and eight browser cases cover public/private boundaries, grade thresholds/retakes, retry/duplicate/navigation cases and 320–1280px layouts. Independent code and keyboard QA approved. Exact 79% is unrepresentable for 5–10 equally weighted questions; the actual 60/80% boundary was tested. PR #33 is MERGED, implementation 73be578 verified in fetched main, and #7 closed afterward. Next is #8.
+
+
+## Issue #8 — implementation and QA complete
+
+Personal analytics, real-event completion chart with exact data table, global/per-career summaries and chronological owned learning/quiz histories. Handles resets, pre-existing completions, equal timestamps, empty accounts and background-save refresh. Full details: issue-8-qa.md.
+
+Build/lint PASS; 232 unit tests PASS in 11 files; 66 Chromium browser tests PASS / 0 failed/skipped in 1.3m. Seventeen new model tests and seven browser cases cover historical aggregation, ownership, actual writes, retries and 320–1280px layouts. Independent code review approved. Issue remains open pending reviewed integration and verification in main.
