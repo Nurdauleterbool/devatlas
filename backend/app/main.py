@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .auth import AuthManager, router as auth_router
+from .analytics import AnalyticsManager, router as analytics_router
 from .catalogue import router as catalogue_router
 from .catalogue_seed import seed_catalogue
 from .progress import ProgressManager, router as progress_router
@@ -29,6 +30,7 @@ def create_app(
     app.state.auth = AuthManager(factory)
     app.state.progress_manager = ProgressManager(factory, app.state.auth)
     app.state.quiz_manager = QuizManager(factory, app.state.auth)
+    app.state.analytics_manager = AnalyticsManager(factory, app.state.progress_manager, app.state.quiz_manager)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.frontend_origin],
@@ -63,6 +65,7 @@ def create_app(
     app.include_router(catalogue_router)
     app.include_router(progress_router)
     app.include_router(quiz_router)
+    app.include_router(analytics_router)
 
     @app.get("/api/v1/health", response_model=HealthResponse, tags=["Operations"])
     def health() -> HealthResponse:
