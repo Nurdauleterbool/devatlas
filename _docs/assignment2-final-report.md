@@ -66,7 +66,7 @@ During the walkthrough, the user verified the AWS API returned `{"status":"ok"}`
 
 ## 8. Links to reproducible evidence
 - [Repository](https://github.com/Nurdauleterbool/devatlas)
-- [Existing live deployment evidence](_docs/assignment-deployment-evidence.md)
+- [Existing live deployment evidence](assignment-deployment-evidence.md)
 - [PR #74 — AWS automatic deployment](https://github.com/Nurdauleterbool/devatlas/pull/74)
 - [Successful full-stack CI for PR #74](https://github.com/Nurdauleterbool/devatlas/actions/runs/41587130001)
 - [Main CI after merge — status pending at last check](https://github.com/Nurdauleterbool/devatlas/actions/runs/41587941810)
