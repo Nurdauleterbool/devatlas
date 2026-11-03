@@ -31,7 +31,7 @@ def create_app(
     # The deployed `app` instance selects SQLite by configuration.
     if repository_factory is not None:
         factory = repository_factory
-    elif settings.storage_backend == "sqlite":
+    elif settings.storage_backend in ("sqlite", "postgres"):
         from alembic import command
         from alembic.config import Config
         config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
@@ -112,4 +112,8 @@ def create_app(
 
     return app
 
-app = create_app(settings=Settings(storage_backend="sqlite"))
+_runtime_settings = Settings()
+_runtime_backend = "postgres" if _runtime_settings.database_url.startswith(
+    ("postgresql://", "postgresql+psycopg://", "postgres://")
+) else "sqlite"
+app = create_app(settings=_runtime_settings.model_copy(update={"storage_backend": _runtime_backend}))
