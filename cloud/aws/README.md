@@ -91,6 +91,33 @@ image pinning, recovery/patching plan, resource alerting and preferably a
 managed HA database; this template is a class demonstration, not SLA-grade
 hosting.
 
+## Amazon Linux 2023 first-boot recovery
+
+If the CloudFormation stack reaches `CREATE_COMPLETE` but HTTPS shows
+`ERR_CONNECTION_REFUSED`, inspect EC2 Session Manager →
+`sudo tail -n 80 /var/log/cloud-init-output.log`. In the original template,
+`dnf install docker git curl openssl` conflicted with the default Amazon Linux
+2023 `curl-minimal`. Current template omits the unnecessary full `curl` package.
+
+To recover the **existing** EC2 instance safely, run these commands in EC2
+Session Manager (do not recreate the stack):
+
+```bash
+sudo dnf install -y docker git openssl
+sudo systemctl enable --now docker
+sudo docker --version
+# A failed cloud-init at dnf has not cloned the repo yet:
+sudo git clone --branch main --depth 1 https://github.com/Nurdauleterbool/devatlas.git /opt/devatlas
+sudo bash /opt/devatlas/cloud/aws/bootstrap.sh 54.89.51.192
+sudo docker ps -a
+```
+
+Replace the IP with the stack's `DemoURL` IP if different. If the clone reports
+that the directory already exists, inspect it first rather than deleting data.
+The bootstrap creates `/opt/devatlas/.env.aws` with a private database password;
+never paste this file into chat or commit it. If launch fails, inspect Docker
+status and logs and keep the stack intact while debugging.
+
 ## Operations, troubleshooting and teardown
 
 - View CloudFormation `Events` and `Outputs`, and EC2 instance status.
