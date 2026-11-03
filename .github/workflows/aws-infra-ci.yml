@@ -1,0 +1,43 @@
+name: AWS CloudFormation and Compose validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloud/aws/**'
+      - '.github/workflows/aws-infra-ci.yml'
+      - '.github/workflows/publish-aws-image.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'cloud/aws/**'
+      - '.github/workflows/aws-infra-ci.yml'
+      - '.github/workflows/publish-aws-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate CloudFormation with cfn-lint
+        run: |
+          python -m pip install 'cfn-lint>=1.0,<2'
+          cfn-lint cloud/aws/cloudformation.yaml
+      - name: Validate bootstrap shell syntax
+        run: bash -n cloud/aws/bootstrap.sh
+      - name: Validate AWS Docker Compose configuration
+        run: |
+          printf 'POSTGRES_PASSWORD=ci-only-example\nAPP_IMAGE=ghcr.io/nurdauleterbool/devatlas:latest\nDOMAIN=198.51.100.10.sslip.io\n' > /tmp/aws-compose-test.env
+          docker compose --env-file /tmp/aws-compose-test.env -f cloud/aws/compose.aws.yaml config --quiet
+      - name: Check no active AWS creation by default
+        run: |
+          grep -q "Default: 'no'" cloud/aws/cloudformation.yaml
+          test "$(grep -c "Default: 'no'" cloud/aws/cloudformation.yaml)" -ge 2
