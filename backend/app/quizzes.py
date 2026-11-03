@@ -113,7 +113,7 @@ def validate_quiz_seeds(seeds: dict, factory: RepositoryFactory) -> None:
 
 
 class QuizManager:
-    def __init__(self, factory: RepositoryFactory, auth, seeds: dict | None = None):
+    def __init__(self, factory: RepositoryFactory, auth, seeds: dict | None = None, *, preseeded: bool = False):
         self.factory = factory
         self.auth = auth
         self._lock = RLock()
@@ -121,7 +121,7 @@ class QuizManager:
         validate_quiz_seeds(self._data, factory)
         self._keys = self._data["answerKeys"]
         repository = factory.create("quizzes")
-        if not repository.list():
+        if not preseeded and not repository.list():
             # Supplied custom catalogues must not receive orphaned seed quizzes.
             present_skills = {
                 item.get("id") for item in factory.create("skills").list()
