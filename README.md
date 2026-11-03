@@ -1,5 +1,11 @@
 # DevAtlas — Interactive IT Career & Skill Gap Analyzer
 
+### 🌐 Live Website
+
+**[Open DevAtlas — AWS HTTPS](https://54.89.51.192.sslip.io)** · [Alternative Render deployment](https://devatlas-z0e0.onrender.com)
+
+The live application uses PostgreSQL and is available without running localhost. The `localhost` URLs below are **only for local development**.
+
 DevAtlas helps Software Engineering and IT students choose a career path, understand skill prerequisites, track learning and identify what to study next. The MVP includes three paths—**Frontend Developer, Backend Developer and Data Analyst**—with ten shared skills, quizzes and personalized analytics.
 
 **Current implementation (November 2026):** React + TypeScript + Vite + Tailwind CSS + React Flow frontend; FastAPI backend; SQLAlchemy + SQLite persistent repositories; Alembic migrations; Vitest, pytest and Playwright QA. The frontend uses the **real API by default**. The isolated mock adapter is available for demonstration and regression testing.
@@ -12,7 +18,7 @@ DevAtlas helps Software Engineering and IT students choose a career path, unders
 
 No cloud credentials, API keys or hosted database are required for local development. SQLite creates a local database file. Use **test credentials only**.
 
-## Fresh-clone setup: run the full application
+## Local development: fresh-clone setup
 
 ```sh
 git clone https://github.com/Nurdauleterbool/devatlas.git
@@ -66,7 +72,7 @@ To run only the mock frontend without FastAPI, use `VITE_SERVICE_MODE=mock npm r
 
 ## Feature walkthrough (roughly 5 minutes)
 
-1. Open `/`, examine the public dashboard preview, the `/careers` list and `/graph` prerequisite graph.
+1. Open the **[live DevAtlas website](https://54.89.51.192.sslip.io)**, examine the public dashboard preview, the `/careers` list and `/graph` prerequisite graph.
 2. Go to `/signup`; create a test user with a valid email and a unique password. Choose **Frontend Developer** on the Dashboard or Career Paths screen.
 3. View `/graph?path=frontend`: HTML unlocks prerequisite-dependent CSS/JavaScript learning; open a node or use its accessible keyboard control.
 4. Visit `/skills/html`: read prerequisites and free resources, mark your self-assessment as **Learning** and then **Completed**.
@@ -135,7 +141,7 @@ docker compose up --build -d --wait
 # Open http://localhost:8000
 ```
 
-**Verified classroom deployments on 2026-11-03:** [Render HTTPS](https://devatlas-z0e0.onrender.com) (Docker web service + managed PostgreSQL) and [AWS HTTPS](https://54.89.51.192.sslip.io) (CloudFormation + EC2 running Caddy, FastAPI/React and PostgreSQL via Compose). The user confirmed both health checks and account selection persistence; see [live deployment and CI evidence](_docs/assignment-deployment-evidence.md). AWS resources consume Free Plan credits until the stack is deleted; [cleanup runbook](cloud/aws/README.md). AWS automatic redeployment is **not yet configured**. The Render after-CI Auto-Deploy option is configured but has not been verified on a new push.
+**Verified classroom deployments on 2026-11-03:** [Render HTTPS](https://devatlas-z0e0.onrender.com) (Docker web service + managed PostgreSQL) and [AWS HTTPS](https://54.89.51.192.sslip.io) (CloudFormation + EC2 running Caddy, FastAPI/React and PostgreSQL via Compose). The user confirmed both health checks and account selection persistence; see [live deployment and CI evidence](_docs/assignment-deployment-evidence.md). AWS resources consume Free Plan credits until the stack is deleted; [cleanup runbook](cloud/aws/README.md). AWS automatic redeployment completed successfully via GitHub Actions after PR #74 ([verified workflow run](https://github.com/Nurdauleterbool/devatlas/actions/runs/41588539895)); post-deployment user-state checks are separate. The Render after-CI Auto-Deploy option is configured but has not been verified on a new push.
 
 For feature-separated Playwright tests:
 
