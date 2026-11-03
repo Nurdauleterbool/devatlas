@@ -9,5 +9,5 @@ class Settings(BaseSettings):
     app_name: str = "DevAtlas API"
     frontend_origin: str = os.environ.get("RENDER_EXTERNAL_URL") or "http://localhost:5173"
     environment: str = "development"
-    storage_backend: Literal["memory", "sqlite"] = "memory"
+    storage_backend: Literal["memory", "sqlite", "postgres"] = "memory"
     database_url: str = "sqlite:///./devatlas.db"
