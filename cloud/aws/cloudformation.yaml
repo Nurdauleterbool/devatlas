@@ -1,24 +1,35 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
-  DevAtlas educational EC2 Docker Compose reference. No AWS resources are
-  provisioned unless explicitly approved. Deployment readiness/costs must be reviewed.
+  DevAtlas educational AWS EC2 + Docker Compose + HTTPS + PostgreSQL.
+  Costs consume AWS Free Plan credits; this stack is OFF by default.
+  Review all resources before enabling. Not a high-availability production cluster.
+
 Parameters:
   AllowCreation:
     Type: String
     Default: 'no'
     AllowedValues: ['no', 'yes']
-    Description: Set yes ONLY after verifying eligible Free account and exact resource costs.
+    Description: Keep no until you explicitly authorize AWS resource creation.
+  ConfirmCreditUsage:
+    Type: String
+    Default: 'no'
+    AllowedValues: ['no', 'yes']
+    Description: Confirm Free Plan eligibility and that EC2/EBS/public IPv4 use credits.
   VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: Existing VPC ID. Requires user-reviewed networking.
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|vpc-[0-9a-fA-F]+)$'
+    Description: Existing VPC, only needed when creating resources.
   SubnetId:
-    Type: AWS::EC2::Subnet::Id
-    Description: Existing public subnet with Internet Gateway.
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|subnet-[0-9a-fA-F]+)$'
+    Description: Existing PUBLIC subnet with IGW, route to internet and auto public IPv4.
   InstanceType:
     Type: String
     Default: t3.micro
     AllowedValues: [t3.micro]
-    Description: Not guaranteed free under every AWS account/region; check first.
+    Description: One small instance only; validate Free Plan eligibility and regional rates.
   LatestAmiId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
@@ -26,46 +37,136 @@ Parameters:
     Type: String
     Default: https://github.com/Nurdauleterbool/devatlas.git
     AllowedPattern: '^https://github[.]com/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+[.]git$'
+
 Conditions:
-  Approved: !Equals [!Ref AllowCreation, 'yes']
+  Approved:
+    Fn::And:
+      - Fn::Equals: [!Ref AllowCreation, 'yes']
+      - Fn::Equals: [!Ref ConfirmCreditUsage, 'yes']
+      - Fn::Not: [{Fn::Equals: [!Ref VpcId, '']}]
+      - Fn::Not: [{Fn::Equals: [!Ref SubnetId, '']}]
+
 Resources:
+  DevAtlasPublicIp:
+    Type: AWS::EC2::EIP
+    Condition: Approved
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: App
+          Value: DevAtlas
+        - Key: Purpose
+          Value: Class-Demo
+
   DevAtlasSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Condition: Approved
     Properties:
-      GroupDescription: DevAtlas educational HTTP demonstration endpoint
+      GroupDescription: DevAtlas HTTPS demo (only port 80/443 public, no SSH/database)
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-      Tags: [{Key: App, Value: DevAtlas}]
+          Description: ACME HTTP challenge and HTTPS redirect
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: DevAtlas HTTPS
+        - IpProtocol: udp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: HTTP/3 HTTPS
+      Tags:
+        - Key: App
+          Value: DevAtlas
+
+  DevAtlasInstanceRole:
+    Type: AWS::IAM::Role
+    Condition: Approved
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: App
+          Value: DevAtlas
+
+  DevAtlasInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: Approved
+    Properties:
+      Roles:
+        - !Ref DevAtlasInstanceRole
+
   DevAtlasInstance:
     Type: AWS::EC2::Instance
     Condition: Approved
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Ref LatestAmiId
+      IamInstanceProfile: !Ref DevAtlasInstanceProfile
       SubnetId: !Ref SubnetId
-      SecurityGroupIds: [!Ref DevAtlasSecurityGroup]
+      SecurityGroupIds:
+        - !Ref DevAtlasSecurityGroup
+      Monitoring: false
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
+        HttpPutResponseHopLimit: 1
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
             VolumeType: gp3
-            VolumeSize: 8
+            VolumeSize: 16
             DeleteOnTermination: true
-      Tags: [{Key: Name, Value: DevAtlas-Demo}]
+            Encrypted: true
+      Tags:
+        - Key: Name
+          Value: DevAtlas-AWS-Demo
+        - Key: App
+          Value: DevAtlas
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -eux
-          dnf install -y docker git
-          systemctl enable --now docker
-          # Reference provisioning only: private secrets, TLS and the Docker Compose
-          # plugin must be configured and reviewed before launching for real users.
-          git clone '${RepoUrl}' /opt/devatlas
+        Fn::Base64:
+          Fn::Sub:
+            - |
+              #!/bin/bash
+              set -euo pipefail
+              # No credentials in UserData. Password is generated on EC2.
+              dnf install -y docker git curl openssl
+              git clone --branch main --depth 1 '${RepoUrl}' /opt/devatlas
+              bash /opt/devatlas/cloud/aws/bootstrap.sh '${PublicIp}'
+            - PublicIp: !GetAtt DevAtlasPublicIp.PublicIp
+
+  DevAtlasAddressAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Condition: Approved
+    Properties:
+      AllocationId: !GetAtt DevAtlasPublicIp.AllocationId
+      InstanceId: !Ref DevAtlasInstance
+
 Outputs:
   Safety:
-    Value: 'CloudFormation resource creation is gated by AllowCreation=yes.'
-    Description: No AWS resources from this template unless explicitly approved.
+    Description: Creation requires two yes confirmations AND VpcId/SubnetId.
+    Value: >-
+      By default, this template creates zero resources. Review Free Plan and
+      verify actual costs before choosing yes for both confirmations.
+  DemoURL:
+    Condition: Approved
+    Description: Demo HTTPS endpoint; depends on public sslip.io DNS and Lets Encrypt.
+    Value: !Sub
+      - 'https://${PublicIp}.sslip.io'
+      - PublicIp: !GetAtt DevAtlasPublicIp.PublicIp
+  PrivateStorageWarning:
+    Condition: Approved
+    Description: Data is on the EC2 EBS root; deletion of this stack destroys it.
+    Value: Back up PostgreSQL before stack deletion or instance replacement.
