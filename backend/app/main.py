@@ -1,5 +1,7 @@
 """FastAPI composition root with versioned authentication and health routes."""
 from pathlib import Path
+import logging
+import time
 from fastapi import FastAPI, Request
 from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
@@ -20,6 +22,8 @@ from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 from .db import make_engine, make_session_factory
 from .sql_repositories import SQLAlchemyRepositoryFactory
 
+log = logging.getLogger("devatlas.startup")
+
 class HealthResponse(BaseModel):
     status: str
 
@@ -28,6 +32,8 @@ def create_app(
     repository_factory: RepositoryFactory | None = None,
 ) -> FastAPI:
     settings = settings if settings is not None else Settings()
+    started_at = time.monotonic()
+    sql_seeded = False
     # Existing unit tests and injected repositories remain memory-backed.
     # The deployed `app` instance selects SQLite by configuration.
     if repository_factory is not None:
@@ -37,18 +43,28 @@ def create_app(
         from alembic.config import Config
         config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
         config.set_main_option("sqlalchemy.url", settings.database_url)
+        log.info("Alembic migrations starting, backend %s", settings.storage_backend)
         command.upgrade(config, "head")
+        log.info("Alembic migrations complete after %.2fs", time.monotonic() - started_at)
         engine = make_engine(settings.database_url)
-        factory = SQLAlchemyRepositoryFactory(make_session_factory(engine))
+        sessions = make_session_factory(engine)
+        factory = SQLAlchemyRepositoryFactory(sessions)
+        if settings.storage_backend == "postgres":
+            from .fast_sql_seed import seed_sql_reference
+            log.info("Batched PostgreSQL reference data seed starting")
+            seed_sql_reference(sessions, factory)
+            sql_seeded = True
+            log.info("Batched PostgreSQL seed complete after %.2fs total", time.monotonic() - started_at)
     else:
         factory = InMemoryRepositoryFactory()
     app = FastAPI(title=settings.app_name, version="0.1.0")
-    seed_catalogue(factory)
+    if not sql_seeded:
+        seed_catalogue(factory)
     app.state.repositories = factory
     app.state.settings = settings
     app.state.auth = AuthManager(factory)
     app.state.progress_manager = ProgressManager(factory, app.state.auth)
-    app.state.quiz_manager = QuizManager(factory, app.state.auth)
+    app.state.quiz_manager = QuizManager(factory, app.state.auth, preseeded=sql_seeded)
     app.state.analytics_manager = AnalyticsManager(factory, app.state.progress_manager, app.state.quiz_manager)
     app.add_middleware(
         CORSMiddleware,
@@ -111,6 +127,7 @@ def create_app(
             app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
 
 
+    log.info("FastAPI application initialized after %.2fs", time.monotonic() - started_at)
     return app
 
 _runtime_settings = Settings()
