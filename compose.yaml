@@ -1,0 +1,47 @@
+name: devatlas
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: devatlas
+      POSTGRES_USER: devatlas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devatlas_local_dev_only}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devatlas -d devatlas"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [private]
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: "10000"
+      DEVATLAS_STORAGE_BACKEND: postgres
+      DEVATLAS_DATABASE_URL: postgresql+psycopg://devatlas:${POSTGRES_PASSWORD:-devatlas_local_dev_only}@db:5432/devatlas
+      DEVATLAS_ENVIRONMENT: development
+      DEVATLAS_FRONTEND_ORIGIN: http://localhost:${APP_PORT:-8000}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:10000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10000/api/v1/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+    networks: [private]
+networks:
+  private:
+    driver: bridge
+volumes:
+  postgres_data:

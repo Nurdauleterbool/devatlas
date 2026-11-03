@@ -1,6 +1,7 @@
 """FastAPI composition root with versioned authentication and health routes."""
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
+from starlette.exceptions import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -31,7 +32,7 @@ def create_app(
     # The deployed `app` instance selects SQLite by configuration.
     if repository_factory is not None:
         factory = repository_factory
-    elif settings.storage_backend == "sqlite":
+    elif settings.storage_backend in ("sqlite", "postgres"):
         from alembic import command
         from alembic.config import Config
         config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
@@ -62,7 +63,17 @@ def create_app(
         return JSONResponse(status_code=422, content={"error": {"code": "VALIDATION", "message": "Invalid request."}}, headers={"Cache-Control": "no-store"})
 
     @app.exception_handler(HTTPException)
-    async def handle_http_error(_request: Request, exc: HTTPException):
+    async def handle_http_error(request: Request, exc: HTTPException):
+        # The SPA fallback must not shadow API routes registered after create_app.
+        if exc.status_code == 404 and request.method == "GET":
+            request_path = request.url.path.lstrip("/")
+            frontend_dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+            if frontend_dist.is_dir() and not request_path.startswith("api/"):
+                candidate = (frontend_dist / request_path).resolve()
+                if candidate.is_file() and candidate.is_relative_to(frontend_dist.resolve()):
+                    return FileResponse(candidate)
+                if "." not in Path(request_path).name:
+                    return FileResponse(frontend_dist / "index.html")
         content = exc.detail if isinstance(exc.detail, dict) and "error" in exc.detail else {
             "error": {"code": "UNAVAILABLE", "message": "Request failed."}
         }
@@ -99,17 +110,11 @@ def create_app(
         if assets.is_dir():
             app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
 
-        @app.get("/{requested_path:path}", include_in_schema=False)
-        def react_spa(requested_path: str):
-            if requested_path.startswith("api/"):
-                raise HTTPException(status_code=404, detail={"error": {"code": "NOT_FOUND", "message": "Resource not found."}})
-            candidate = (frontend_dist / requested_path).resolve()
-            if candidate.is_file() and candidate.is_relative_to(frontend_dist.resolve()):
-                return FileResponse(candidate)
-            if "." in Path(requested_path).name:
-                raise HTTPException(status_code=404, detail={"error": {"code": "NOT_FOUND", "message": "Resource not found."}})
-            return FileResponse(frontend_dist / "index.html")
 
     return app
 
-app = create_app(settings=Settings(storage_backend="sqlite"))
+_runtime_settings = Settings()
+_runtime_backend = "postgres" if _runtime_settings.database_url.startswith(
+    ("postgresql://", "postgresql+psycopg://", "postgres://")
+) else "sqlite"
+app = create_app(settings=_runtime_settings.model_copy(update={"storage_backend": _runtime_backend}))

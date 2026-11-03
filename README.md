@@ -123,3 +123,25 @@ For historical QA reports see the `_docs/issue-*-qa.md` files. Full-stack user j
 [Product plan](_docs/plan.md) · [Architecture](_docs/architecture.md) · [API decisions](_docs/api-contract.md) · [Engineering process](process.md) · [Agent guidelines](AGENTS.md) · [Issue backlog](_docs/issue-backlog.md) · [Role definitions](roles/) · [Submission readiness](_docs/issue-22-submission.md).
 
 Follow the stage gates: issue → implementation branch → tests/evidence → PR → QA review → verified closure. Post-MVP issues are deferred unless separately prioritized.
+
+
+## Test, Containerise and Deploy — assignment
+
+The original DevAtlas application can now run with **React static assets and FastAPI in one Dockerfile**, backed by a **PostgreSQL** service in `compose.yaml`.
+
+```bash
+cp .env.compose.example .env
+docker compose up --build -d --wait
+# Open http://localhost:8000
+```
+
+For feature-separated Playwright tests:
+
+```bash
+cd frontend
+npm ci
+npx playwright install chromium
+npm run test:e2e:compose
+```
+
+See [the new assignment guide](_docs/new-assignment.md) for SQLite data transfer, GitHub Issues #50–66, CI/CD, public deployment mapping and AWS CloudFormation safety caveats.
