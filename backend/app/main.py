@@ -22,7 +22,7 @@ from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 from .db import make_engine, make_session_factory
 from .sql_repositories import SQLAlchemyRepositoryFactory
 
-log = logging.getLogger("devatlas.startup")
+log = logging.getLogger("uvicorn.error")
 
 class HealthResponse(BaseModel):
     status: str
@@ -134,4 +134,12 @@ _runtime_settings = Settings()
 _runtime_backend = "postgres" if _runtime_settings.database_url.startswith(
     ("postgresql://", "postgresql+psycopg://", "postgres://")
 ) else "sqlite"
-app = create_app(settings=_runtime_settings.model_copy(update={"storage_backend": _runtime_backend}))
+if _runtime_backend == "postgres":
+    from .deferred import DeferredDatabaseApp
+    # Open the HTTP port before first-run migrations and seeding begin.
+    # Until ready, all requests including /api/v1/health return HTTP 503.
+    app = DeferredDatabaseApp(
+        lambda: create_app(settings=_runtime_settings.model_copy(update={"storage_backend": "postgres"}))
+    )
+else:
+    app = create_app(settings=_runtime_settings.model_copy(update={"storage_backend": "sqlite"}))
