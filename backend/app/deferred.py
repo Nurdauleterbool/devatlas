@@ -13,7 +13,7 @@ from typing import Callable
 
 from starlette.responses import JSONResponse
 
-log = logging.getLogger("devatlas.bootstrap")
+log = logging.getLogger("uvicorn.error")
 
 
 class DeferredDatabaseApp:
