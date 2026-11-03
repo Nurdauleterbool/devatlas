@@ -4,7 +4,7 @@
 
 **[Open DevAtlas — AWS HTTPS](https://54.89.51.192.sslip.io)** · [Alternative Render deployment](https://devatlas-z0e0.onrender.com)
 
-The live application uses PostgreSQL and is available without running localhost. The `localhost` URLs below are **only for local development**.
+The deployed application runs with PostgreSQL. Use the live website link above to access DevAtlas; the optional local development instructions follow.
 
 DevAtlas helps Software Engineering and IT students choose a career path, understand skill prerequisites, track learning and identify what to study next. The MVP includes three paths—**Frontend Developer, Backend Developer and Data Analyst**—with ten shared skills, quizzes and personalized analytics.
 
@@ -38,7 +38,7 @@ python -m alembic upgrade head
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-The API startup also applies Alembic migrations and seeds a deterministic catalogue when using SQLite. From another terminal, check `http://127.0.0.1:8000/api/v1/health`; expected JSON is `{"status":"ok"}`. API documentation is available at `http://127.0.0.1:8000/docs`.
+The API startup also applies Alembic migrations and seeds a deterministic catalogue when using SQLite. For local development, check the `/api/v1/health` endpoint (expected JSON: `{"status":"ok"}`) or the `/docs` API reference. The public API health endpoint is [available on AWS](https://54.89.51.192.sslip.io/api/v1/health).
 
 **Terminal B — frontend** (from repository root, in a different terminal):
 
@@ -48,7 +48,7 @@ npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. Vite proxies `/api` to the local backend. Leave both terminal processes running while testing. Use localhost (not a different frontend hostname) for the default allowed browser Origin.
+Open the development URL printed by Vite in your terminal. Vite proxies `/api` to the local backend. Leave both terminal processes running while testing. For normal use, open the public website linked at the top of this README.
 
 **Persistence:** the local default SQLite file is `backend/devatlas.db` (ignored by git). Accounts, hashed credentials, session digests, path selections, progress, history and quiz attempts survive backend restarts. Changing/deleting this file changes local test data; do not remove it to reset an account unintentionally.
 
@@ -63,7 +63,7 @@ Copy `backend/.env.example` to `backend/.env` if you need local settings, or set
 | Setting | Default / meaning |
 | --- | --- |
 | `DEVATLAS_DATABASE_URL` | `sqlite:///./devatlas.db` from `backend/`; SQLite file path |
-| `DEVATLAS_FRONTEND_ORIGIN` | `http://localhost:5173`; browser Origin allowlist |
+| `DEVATLAS_FRONTEND_ORIGIN` | Local development browser Origin allowlist; see `backend/.env.example` for its default |
 | `DEVATLAS_ENVIRONMENT` | `development`; set `production` only behind HTTPS with Secure cookies |
 | `DEVATLAS_STORAGE_BACKEND` | App server runs SQLite by default; `create_app()` test factory uses isolated memory |
 | `VITE_SERVICE_MODE` | `http` (default live API), or `mock` (demo/test mode) |
@@ -138,7 +138,7 @@ The original DevAtlas application can now run with **React static assets and Fas
 ```bash
 cp .env.compose.example .env
 docker compose up --build -d --wait
-# Open http://localhost:8000
+# Publicly accessible hosted app: https://54.89.51.192.sslip.io
 ```
 
 **Verified classroom deployments on 2026-11-03:** [Render HTTPS](https://devatlas-z0e0.onrender.com) (Docker web service + managed PostgreSQL) and [AWS HTTPS](https://54.89.51.192.sslip.io) (CloudFormation + EC2 running Caddy, FastAPI/React and PostgreSQL via Compose). The user confirmed both health checks and account selection persistence; see [live deployment and CI evidence](_docs/assignment-deployment-evidence.md). AWS resources consume Free Plan credits until the stack is deleted; [cleanup runbook](cloud/aws/README.md). AWS automatic redeployment completed successfully via GitHub Actions after PR #74 ([verified workflow run](https://github.com/Nurdauleterbool/devatlas/actions/runs/41588539895)); post-deployment user-state checks are separate. The Render after-CI Auto-Deploy option is configured but has not been verified on a new push.
