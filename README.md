@@ -2,7 +2,7 @@
 
 DevAtlas helps Software Engineering and IT students choose a career path, understand skill prerequisites, track learning and identify what to study next. The MVP includes three paths—**Frontend Developer, Backend Developer and Data Analyst**—with ten shared skills, quizzes and personalized analytics.
 
-**Current implementation (October 2026):** React + TypeScript + Vite + Tailwind CSS + React Flow frontend; FastAPI backend; SQLAlchemy + SQLite persistent repositories; Alembic migrations; Vitest, pytest and Playwright QA. The frontend uses the **real API by default**. The isolated mock adapter is available for demonstration and regression testing.
+**Current implementation (November 2026):** React + TypeScript + Vite + Tailwind CSS + React Flow frontend; FastAPI backend; SQLAlchemy + SQLite persistent repositories; Alembic migrations; Vitest, pytest and Playwright QA. The frontend uses the **real API by default**. The isolated mock adapter is available for demonstration and regression testing.
 
 ## Requirements
 
@@ -112,7 +112,7 @@ For historical QA reports see the `_docs/issue-*-qa.md` files. Full-stack user j
 
 ## Known limitations / submission status
 
-- This is a **local educational MVP**, not a production-hardened hosted service. SQLite and in-process locks are not designed for distributed multiworker deployment. Authentication lacks email verification and dedicated rate limiting.
+- This is an **educational MVP with live Render and AWS demonstrations**, not a production-hardened or high-availability service. Local development defaults to SQLite; hosted and Compose stacks use PostgreSQL. Authentication lacks email verification and dedicated rate limiting.
 - Session cookies require HTTPS and correct secure origin settings for any production deployment. No OAuth, AI chat, social features or external data synchronization is included.
 - Real mobile/desktop **human** UAT and accessibility signoff are still pending under [Issue #21](https://github.com/Nurdauleterbool/devatlas/issues/21). Browser automation is additional evidence, not manual testing.
 - Final submission documentation is [Issue #22](https://github.com/Nurdauleterbool/devatlas/issues/22); **do not close it until #21 has human QA verification and the final checklist is signed off**.
@@ -134,6 +134,8 @@ cp .env.compose.example .env
 docker compose up --build -d --wait
 # Open http://localhost:8000
 ```
+
+**Verified classroom deployments on 2026-11-03:** [Render HTTPS](https://devatlas-z0e0.onrender.com) (Docker web service + managed PostgreSQL) and [AWS HTTPS](https://54.89.51.192.sslip.io) (CloudFormation + EC2 running Caddy, FastAPI/React and PostgreSQL via Compose). The user confirmed both health checks and account selection persistence; see [live deployment and CI evidence](_docs/assignment-deployment-evidence.md). AWS resources consume Free Plan credits until the stack is deleted; [cleanup runbook](cloud/aws/README.md). AWS automatic redeployment is **not yet configured**. The Render after-CI Auto-Deploy option is configured but has not been verified on a new push.
 
 For feature-separated Playwright tests:
 
