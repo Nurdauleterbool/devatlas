@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  DevAtlas educational EC2 Docker Compose reference. No AWS resources are
+  provisioned unless explicitly approved. Deployment readiness/costs must be reviewed.
+Parameters:
+  AllowCreation:
+    Type: String
+    Default: 'no'
+    AllowedValues: ['no', 'yes']
+    Description: Set yes ONLY after verifying eligible Free account and exact resource costs.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Existing VPC ID. Requires user-reviewed networking.
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Existing public subnet with Internet Gateway.
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro]
+    Description: Not guaranteed free under every AWS account/region; check first.
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  RepoUrl:
+    Type: String
+    Default: https://github.com/Nurdauleterbool/devatlas.git
+    AllowedPattern: '^https://github[.]com/[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+[.]git$'
+Conditions:
+  Approved: !Equals [!Ref AllowCreation, 'yes']
+Resources:
+  DevAtlasSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: Approved
+    Properties:
+      GroupDescription: DevAtlas educational HTTP demonstration endpoint
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags: [{Key: App, Value: DevAtlas}]
+  DevAtlasInstance:
+    Type: AWS::EC2::Instance
+    Condition: Approved
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: !Ref LatestAmiId
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref DevAtlasSecurityGroup]
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 8
+            DeleteOnTermination: true
+      Tags: [{Key: Name, Value: DevAtlas-Demo}]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eux
+          dnf install -y docker git
+          systemctl enable --now docker
+          # Reference provisioning only: private secrets, TLS and the Docker Compose
+          # plugin must be configured and reviewed before launching for real users.
+          git clone '${RepoUrl}' /opt/devatlas
+Outputs:
+  Safety:
+    Value: 'CloudFormation resource creation is gated by AllowCreation=yes.'
+    Description: No AWS resources from this template unless explicitly approved.
