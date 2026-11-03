@@ -1,0 +1,64 @@
+# AWS single-EC2 demo: built DevAtlas image + PostgreSQL + HTTPS Caddy.
+# No published ports for the database or FastAPI; Caddy is the only public entrypoint.
+name: devatlas-aws
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: devatlas
+      POSTGRES_USER: devatlas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Missing POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devatlas -d devatlas"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+    mem_limit: 256m
+    networks: [private]
+
+  devatlas:
+    image: ${APP_IMAGE:?Missing APP_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: "10000"
+      DEVATLAS_ENVIRONMENT: production
+      DEVATLAS_STORAGE_BACKEND: postgres
+      DEVATLAS_DATABASE_URL: postgresql+psycopg://devatlas:${POSTGRES_PASSWORD}@postgres:5432/devatlas
+      DEVATLAS_FRONTEND_ORIGIN: https://${DOMAIN:?Missing DOMAIN}
+    expose:
+      - "10000"
+    mem_limit: 384m
+    networks: [private]
+
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - devatlas
+    environment:
+      DOMAIN: ${DOMAIN:?Missing DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    mem_limit: 128m
+    networks: [private]
+
+networks:
+  private:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
