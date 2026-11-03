@@ -20,7 +20,7 @@ from .catalogue_seed import (
 )
 from .quizzes import quiz_seeds, validate_quiz_seeds
 
-log = logging.getLogger("devatlas.seed")
+log = logging.getLogger("uvicorn.error")
 
 
 def seed_sql_reference(sessions: sessionmaker, factory=None) -> dict[str, int]:
