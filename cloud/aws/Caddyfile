@@ -1,0 +1,11 @@
+# Caddy provisions a TLS certificate for the public DNS hostname.
+# External DNS via sslip.io is suitable for a class demo, not production SLA.
+{$DOMAIN} {
+  encode zstd gzip
+  reverse_proxy devatlas:10000
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options nosniff
+    Referrer-Policy strict-origin-when-cross-origin
+  }
+}
