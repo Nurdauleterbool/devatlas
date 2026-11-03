@@ -1,0 +1,117 @@
+name: Full-stack PostgreSQL and Compose CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Frontend build, lint and Vitest
+        working-directory: frontend
+        run: |
+          npm run build
+          npm run lint
+          npm test
+      - name: Install backend
+        working-directory: backend
+        run: python -m pip install -e '.[test]'
+      - name: Backend unit and API tests
+        working-directory: backend
+        run: python -m pytest -q
+
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      POSTGRES_PASSWORD: devatlas_ci_disposable_only
+      APP_PORT: '8000'
+      DB_PORT: '5433'
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Start PostgreSQL + application with Compose
+        run: |
+          docker compose config --quiet
+          docker compose up --build -d --wait
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/health
+      - name: API smoke
+        run: |
+          curl -fsS http://127.0.0.1:8000/api/v1/career-paths | python -c 'import json,sys; assert len(json.load(sys.stdin)) == 3'
+          curl -fsS http://127.0.0.1:8000/api/v1/skills | python -c 'import json,sys; assert len(json.load(sys.stdin)) == 10'
+      - name: Install backend integration tests
+        working-directory: backend
+        run: python -m pip install -e '.[test]'
+      - name: Run real PostgreSQL integration tests
+        working-directory: backend
+        env:
+          DEVATLAS_TEST_POSTGRES_URL: postgresql+psycopg://devatlas:devatlas_ci_disposable_only@127.0.0.1:5433/devatlas
+        run: python -m pytest tests/test_postgresql_runtime.py -q
+      - name: Install Playwright
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Mock regression suite
+        working-directory: frontend
+        run: npm run test:e2e -- --workers=1 --retries=1
+      - name: All live PostgreSQL feature tests
+        working-directory: frontend
+        run: npm run test:e2e:compose
+      - name: Compose logs
+        if: failure()
+        run: docker compose logs --no-color --tail=250
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: postgres-playwright-traces
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+      - name: Tear down disposable containers
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  deploy:
+    needs: [unit, integration]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+    steps:
+      - name: Trigger redeploy only after all checks pass
+        if: env.RENDER_DEPLOY_HOOK != ''
+        run: curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK"
+      - name: Explain skipped deployment
+        if: env.RENDER_DEPLOY_HOOK == ''
+        run: echo 'No RENDER_DEPLOY_HOOK secret set; deploy skipped.'
