@@ -10,10 +10,10 @@
 | Docker Compose app + PostgreSQL | #52 | `compose.yaml`, persistent Docker volume |
 | Backend unit/API & frontend tests | #53 | `.github/workflows/fullstack-ci.yml` |
 | Independent live Playwright E2E tests for ten features | #57–66 | `frontend/e2e/features/01*.spec.ts` through `10*.spec.ts`, GitHub label `e2e-test` |
-| Deploy to provider and verify real HTTPS URL | #54 | **Not complete until live provider deploy is verified** |
-| AWS CloudFormation option | #55 | `cloud/aws/cloudformation.yaml` guarded infrastructure template (**not deployed**) |
-| Automatic redeploy after successful tests | #53 | CI job guarded by repository secret `RENDER_DEPLOY_HOOK`; not enabled until configured |
-| Evidence & submission | #56 | GitHub CI results, provider logs and screenshots **to be added after verification** |
+| Deploy to provider and verify real HTTPS URL | #54 | Render live at https://devatlas-z0e0.onrender.com; persisted selection reported by user; see [deployment evidence](assignment-deployment-evidence.md) |
+| AWS CloudFormation option | #55 | EC2/Compose/Caddy/PostgreSQL deployed at https://54.89.51.192.sslip.io and verified by user; guarded template `cloud/aws/cloudformation.yaml` |
+| Automatic redeploy after successful tests | #53 | Render **After CI Checks Pass** is configured, but trigger not yet independently verified; AWS GHCR image publishing is CI-gated, but EC2 automatic pull/restart is not configured |
+| Evidence & submission | #56 | [Verified deployment summary and CI run links](assignment-deployment-evidence.md); actual screenshots still need attaching to Issue #56 |
 
 ## Local run (Docker Desktop, Docker Compose v2)
 
@@ -55,19 +55,19 @@ Ten Playwright files cover navigation, authentication, career selection, skill g
 
 ## CI/CD and deploy guard
 
-`.github/workflows/fullstack-ci.yml` runs frontend build/lint/Vitest, backend pytest, Docker Compose/PostgreSQL startup, API integration, all feature Playwright specs and artifacts. Deployment is allowed only from `main`, after `unit` and `integration` succeed, using a `RENDER_DEPLOY_HOOK` GitHub Actions secret. No deploy happens if the secret is absent.
+`.github/workflows/fullstack-ci.yml` runs frontend build/lint/Vitest, backend pytest, Docker Compose/PostgreSQL startup, API integration, all feature Playwright specs and artifacts. Its optional `RENDER_DEPLOY_HOOK` step requires a repository secret and skips if unset. Render's own **After CI Checks Pass** setting is configured in the dashboard; a newly triggered automatic deploy remains to be verified. AWS's GHCR image publication is gated on successful Full-stack CI, but the running EC2 server does not yet automatically pull/restart that image.
 
 Render does **not** run whole Compose YAML natively: configure a Dockerfile web service and separately managed PostgreSQL, setting `DEVATLAS_DATABASE_URL`, `DEVATLAS_ENVIRONMENT=production` and `DEVATLAS_FRONTEND_ORIGIN` to exact HTTPS origin. If enabling the GitHub hook, disable the service's own automatic-on-commit redeploy to preserve the test-first guarantee. Railway may import Compose definitions as mapped services; verify the provider plan and persistence.
 
 ## CloudFormation and cost safety
 
-The AWS template is intentionally **disabled** by default (`AllowCreation=no`). Cloud resource provisioning requires user authorization, an eligible account, supported free-plan resources, billing alerts, network configuration and review of credentials, TLS and persistence. A $100 promotion is a credit, not a guarantee of zero charges. Never activate paid-only account features or commit passwords.
+The AWS template is intentionally **disabled** by default (`AllowCreation=no`). The user approved creating a single AWS EC2 stack on a Free Plan account and verified the running HTTPS app, PostgreSQL and persisted selection on 2026-11-03. The stack is **currently live** and consumes AWS credit while resources are allocated. The initial cloud-init installation conflict was repaired on the existing EC2 and fixed in source by PR #71; fully automatic first boot with the corrected template has not been re-tested. See [live deployment evidence](assignment-deployment-evidence.md) and [AWS teardown guidance](../cloud/aws/README.md).
 
 ## Completion criteria
 
-- [ ] CI green on actual PR; attach run links.
+- [x] CI green on actual PR; [run links](assignment-deployment-evidence.md).
 - [ ] Validate app and DB restart persistence.
-- [ ] Record real provider public HTTPS URL and smoke verification.
+- [x] Record real Render and AWS public HTTPS URLs and user-confirmed health check; see [deployment evidence](assignment-deployment-evidence.md).
 - [ ] Confirm automated redeployment **after CI**.
-- [ ] Deploy and validate CloudFormation on eligible Free-plan account only with authorization, otherwise report that step pending.
+- [x] Deploy and validate CloudFormation with authorized Free Plan account; AWS app and DB healthy, HTTPS and persistence confirmed; see [deployment evidence](assignment-deployment-evidence.md).
 - [ ] Submit GitHub repository URL with the linked Issues and PR.
