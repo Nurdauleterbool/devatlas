@@ -142,7 +142,7 @@ Resources:
               #!/bin/bash
               set -euo pipefail
               # No credentials in UserData. Password is generated on EC2.
-              dnf install -y docker git curl openssl
+              dnf install -y docker git openssl
               git clone --branch main --depth 1 '${RepoUrl}' /opt/devatlas
               bash /opt/devatlas/cloud/aws/bootstrap.sh '${PublicIp}'
             - PublicIp: !GetAtt DevAtlasPublicIp.PublicIp
