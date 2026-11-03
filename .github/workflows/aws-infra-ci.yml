@@ -31,6 +31,10 @@ jobs:
         run: |
           python -m pip install 'cfn-lint>=1.0,<2'
           cfn-lint cloud/aws/cloudformation.yaml
+      - name: Prevent Amazon Linux 2023 curl-minimal conflict
+        run: |
+          # AL2023 comes with curl-minimal; installing full curl fails at boot.
+          ! grep -Eq 'dnf install.*[[:space:]]curl([[:space:]]|$)' cloud/aws/cloudformation.yaml
       - name: Validate bootstrap shell syntax
         run: bash -n cloud/aws/bootstrap.sh
       - name: Validate AWS Docker Compose configuration
