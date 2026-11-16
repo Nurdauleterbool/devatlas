@@ -60,6 +60,7 @@ jobs:
           image="ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__"
           docker pull "$image"
           sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image|" "$envfile"
+          docker network inspect devatlas-telemetry >/dev/null 2>&1 || docker network create devatlas-telemetry
           docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas
           domain=$(sed -n 's/^DOMAIN=//p' "$envfile")
           curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "https://${domain}/api/v1/health" | grep -q '"status":"ok"'

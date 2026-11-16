@@ -25,10 +25,15 @@ umask 077
 if [ ! -f /opt/devatlas/.env.aws ]; then
   printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)" > /opt/devatlas/.env.aws
 fi
-sed -i '/^APP_IMAGE=/d; /^DOMAIN=/d' /opt/devatlas/.env.aws
+sed -i '/^APP_IMAGE=/d; /^DOMAIN=/d; /^DEVATLAS_ENVIRONMENT=/d' /opt/devatlas/.env.aws
 printf 'APP_IMAGE=ghcr.io/nurdauleterbool/devatlas:latest\n' >> /opt/devatlas/.env.aws
+case "${DEVATLAS_ENVIRONMENT:-production}" in development|production) ;; *) echo 'Invalid environment' >&2; exit 2 ;; esac
 printf 'DOMAIN=%s.sslip.io\n' "$1" >> /opt/devatlas/.env.aws
+printf 'DEVATLAS_ENVIRONMENT=%s\n' "${DEVATLAS_ENVIRONMENT:-production}" >> /opt/devatlas/.env.aws
 chmod 0600 /opt/devatlas/.env.aws
+
+# The app Compose joins an external telemetry network, even with OTel disabled.
+docker network inspect devatlas-telemetry >/dev/null 2>&1 || docker network create devatlas-telemetry
 
 # The image package MUST be marked public in GitHub Packages before this step.
 # Pull first on the small EC2 machine; it cannot safely compile the Node image.
