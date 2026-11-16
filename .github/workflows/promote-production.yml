@@ -1,0 +1,84 @@
+name: Promote verified development image to production
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: '40-character git commit SHA already deployed and verified in development'
+        required: true
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: devatlas-aws-production
+  cancel-in-progress: false
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 25
+    env:
+      AWS_REGION: us-east-1
+      DEV_INSTANCE_ID: ${{ vars.AWS_DEV_INSTANCE_ID }}
+      PROD_INSTANCE_ID: ${{ vars.AWS_INSTANCE_ID }}
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Validate image and targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$DEV_INSTANCE_ID" == i-* ]]
+          [[ "$PROD_INSTANCE_ID" == i-* ]]
+          test "$DEV_INSTANCE_ID" != "$PROD_INSTANCE_ID"
+          test -n "${{ vars.AWS_ROLE_ARN }}"
+          gh api "repos/Nurdauleterbool/devatlas/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Assert development deployed exact candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmd=$(aws ssm send-command --instance-ids "$DEV_INSTANCE_ID" --document-name AWS-RunShellScript --parameters commands='["grep -Fx APP_IMAGE=ghcr.io/nurdauleterbool/devatlas:'"$RELEASE_SHA"' /opt/devatlas/.env.aws >/dev/null"]' --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$cmd" --instance-id "$DEV_INSTANCE_ID"
+          test "$(aws ssm get-command-invocation --command-id "$cmd" --instance-id "$DEV_INSTANCE_ID" --query ResponseCode --output text)" = 0
+      - name: Promote image to production with rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > script.sh <<'SCRIPT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          cd /opt/devatlas
+          envfile=/opt/devatlas/.env.aws
+          compose=cloud/aws/compose.aws.yaml
+          test -f "$envfile"
+          grep -q '^APP_IMAGE=' "$envfile"
+          cp "$envfile" /opt/devatlas/.env.aws.rollback
+          rollback() {
+            trap - ERR
+            cp /opt/devatlas/.env.aws.rollback "$envfile"
+            docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas || true
+            exit 1
+          }
+          trap rollback ERR
+          image="ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__"
+          docker pull "$image"
+          sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image|" "$envfile"
+          docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas
+          domain=$(sed -n 's/^DOMAIN=//p' "$envfile")
+          curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "https://${domain}/api/v1/health" | grep -q '"status":"ok"'
+          rm -f /opt/devatlas/.env.aws.rollback
+          SCRIPT
+          sed -i "s/__IMAGE_SHA__/$RELEASE_SHA/g" script.sh
+          python3 - <<'PY'
+          import json
+          json.dump({'commands':[open('script.sh').read()]},open('command.json','w'))
+          PY
+          id=$(aws ssm send-command --instance-ids "$PROD_INSTANCE_ID" --document-name AWS-RunShellScript --parameters file://command.json --query Command.CommandId --output text)
+          aws ssm wait command-executed --command-id "$id" --instance-id "$PROD_INSTANCE_ID"
+          code=$(aws ssm get-command-invocation --command-id "$id" --instance-id "$PROD_INSTANCE_ID" --query ResponseCode --output text)
+          test "$code" = 0

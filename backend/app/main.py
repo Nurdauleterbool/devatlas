@@ -17,6 +17,7 @@ from .career_selections import router as career_selections_router
 from .catalogue_seed import seed_catalogue
 from .progress import ProgressManager, router as progress_router
 from .quizzes import QuizManager, router as quiz_router
+from .observability import configure
 from .config import Settings
 from .repositories import InMemoryRepositoryFactory, RepositoryFactory
 from .db import make_engine, make_session_factory
@@ -127,6 +128,7 @@ def create_app(
             app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
 
 
+    configure(app)
     log.info("FastAPI application initialized after %.2fs", time.monotonic() - started_at)
     return app
 

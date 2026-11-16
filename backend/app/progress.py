@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict
 
 from .auth import PublicUser, check_unsafe_origin, denied, iso_time, require_user
+from .observability import record
 from .repositories import RepositoryFactory
 
 router = APIRouter(prefix="/api/v1", tags=["Learning progress"])
@@ -112,6 +113,7 @@ class ProgressManager:
                 "fromStatus": previous.status, "toStatus": status,
                 "changedAt": changed_at,
             })
+            record("progress", status=status)
             return self._single(user_id, skill_id)
 
     def history(self, user_id: str) -> list[ProgressEvent]:
