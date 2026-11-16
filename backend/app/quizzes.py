@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .auth import PublicUser, check_unsafe_origin, denied, iso_time, require_user
 from .catalogue_seed import SKILLS
+from .observability import record
 from .repositories import RepositoryFactory
 
 router = APIRouter(prefix="/api/v1", tags=["Quizzes"])
@@ -186,6 +187,9 @@ class QuizManager:
                 "submittedAt": iso_time(self.auth.clock()),
             }
             self.factory.create("quiz_attempts").put(attempt["id"], attempt)
+            record("quiz", outcome="passed" if attempt["passed"] else "failed")
+            if attempt["passed"]:
+                record("quiz_pass")
             return QuizResult(attempt=Attempt(**attempt), feedback=[Feedback(**item) for item in feedback])
 
     def attempts_for(self, user_id: str, quiz_id: str | None = None) -> list[Attempt]:

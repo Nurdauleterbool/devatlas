@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from .observability import record
 from .config import Settings
 from .repositories import RepositoryFactory
 
@@ -126,7 +127,9 @@ class AuthManager:
             user = next((u for u in self.users.list() if u["email"] == payload.email), None)
             valid = matches_password(payload.password, user["passwordHash"] if user else self._dummy_hash)
             if not user or not valid:
+                record("auth", outcome="failure")
                 raise denied("INVALID_CREDENTIALS", "Email or password is incorrect.", 401)
+            record("auth", outcome="success")
             return user
 
     def revoke(self, token: str | None) -> None:

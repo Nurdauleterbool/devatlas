@@ -101,17 +101,3 @@ jobs:
       - name: Tear down disposable containers
         if: always()
         run: docker compose down -v --remove-orphans
-
-  deploy:
-    needs: [unit, integration]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    env:
-      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-    steps:
-      - name: Trigger redeploy only after all checks pass
-        if: env.RENDER_DEPLOY_HOOK != ''
-        run: curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK"
-      - name: Explain skipped deployment
-        if: env.RENDER_DEPLOY_HOOK == ''
-        run: echo 'No RENDER_DEPLOY_HOOK secret set; deploy skipped.'
