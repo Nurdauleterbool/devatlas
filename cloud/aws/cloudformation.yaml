@@ -25,6 +25,11 @@ Parameters:
     Default: ''
     AllowedPattern: '^(|subnet-[0-9a-fA-F]+)$'
     Description: Existing PUBLIC subnet with IGW, route to internet and auto public IPv4.
+  DeploymentEnvironment:
+    Type: String
+    Default: production
+    AllowedValues: [development, production]
+    Description: Runtime environment for this isolated stack.
   InstanceType:
     Type: String
     Default: t3.micro
@@ -144,7 +149,7 @@ Resources:
               # No credentials in UserData. Password is generated on EC2.
               dnf install -y docker git openssl
               git clone --branch main --depth 1 '${RepoUrl}' /opt/devatlas
-              bash /opt/devatlas/cloud/aws/bootstrap.sh '${PublicIp}'
+              DEVATLAS_ENVIRONMENT='${DeploymentEnvironment}' bash /opt/devatlas/cloud/aws/bootstrap.sh '${PublicIp}'
             - PublicIp: !GetAtt DevAtlasPublicIp.PublicIp
 
   DevAtlasAddressAssociation:
