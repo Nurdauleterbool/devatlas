@@ -6,6 +6,7 @@ on:
     paths:
       - 'observability/**'
       - 'test_dashboard.py'
+      - 'tests/test_verify_live.py'
       - '.github/workflows/observability-ci.yml'
   pull_request:
     paths:
@@ -33,6 +34,10 @@ jobs:
         run: python -m unittest test_dashboard -v
       - name: Test on-call responder
         run: python -m unittest discover -s observability/oncall -p 'test_*.py' -v
+      - name: Test read-only live verifier (offline unit tests)
+        run: python -m unittest discover -s tests -p 'test_verify_live.py' -v
+      - name: Run static verifier
+        run: python observability/verify_live.py --static-only --json
       - name: Verify monitoring configurations
         run: |
           python - <<'PY'
