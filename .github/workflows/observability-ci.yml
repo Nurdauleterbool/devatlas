@@ -12,6 +12,7 @@ on:
     paths:
       - 'observability/**'
       - 'test_dashboard.py'
+      - 'tests/test_verify_live.py'
       - '.github/workflows/observability-ci.yml'
 
 permissions:
