@@ -16,12 +16,13 @@ to prevent access to Production. There is no need to change Production IAM.
 
 ## Apply exact Development-only inline policy
 
-Run **from the owner's AWS CloudShell** (us-east-1) after confirming identity:
+Run **from the owner's AWS CloudShell** (us-east-1) after confirming identity.
+This is a Development-only IAM permission change; no Production roles or instances change:
 
 ```bash
 set -euo pipefail
 test "$(aws sts get-caller-identity --query Account --output text)" = "645023698537"
-curl -fsSL https://raw.githubusercontent.com/Nurdauleterbool/devatlas/main/cloud/aws/development-ssm-policy.json -o /tmp/devatlas-development-ssm-policy.json
+curl -fsSL https://raw.githubusercontent.com/Nurdauleterbool/devatlas/fix/aws-development-deploy-isolated-20261117/cloud/aws/development-ssm-policy.json -o /tmp/devatlas-development-ssm-policy.json
 python3 -m json.tool /tmp/devatlas-development-ssm-policy.json >/dev/null
 aws iam put-role-policy \
   --role-name DevAtlasGitHubDevelopmentRole \
@@ -33,8 +34,10 @@ aws iam get-role-policy \
   --query PolicyDocument --output json
 ```
 
-**Do not execute this until the policy file is merged to `main`.** The GitHub
-branch version is used for code review before merging. The policy permits only
+**This currently reads the immutable reviewed policy source from the PR branch,**
+so the IAM role can be configured and verified *before* merging the workflow.
+After PR merge, the canonical copy is under `main`. Only use a reviewed commit
+of this branch; GitHub source code is not a secret but could change before merge. The policy permits only
 `ssm:SendCommand` on Development EC2 and the `AWS-RunShellScript` document,
 with minimal command-result read permissions. No `iam:*`, `ec2:*`, and no
 `ssm:SendCommand` on Production.
