@@ -1,0 +1,46 @@
+name: Observability full-stack smoke (disposable)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'observability/**'
+      - '.github/workflows/observability-stack-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRAFANA_ADMIN_PASSWORD: disposable_ci_password_not_for_real_use
+      OPENAI_API_KEY: ''
+      GITHUB_TOKEN: ''
+      OBS_SMOKE_TIMEOUT: '180'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare isolated telemetry network
+        run: docker network create devatlas-telemetry
+      - name: Start monitoring containers (no cloud resources)
+        run: |
+          docker compose -f observability/compose.observability.yaml config --quiet
+          docker compose -f observability/compose.observability.yaml up -d --build
+      - name: Exercise OTLP metrics and query the real stack
+        run: python observability/check_stack_e2e.py
+      - name: Verify private on-call health endpoint
+        run: |
+          docker compose -f observability/compose.observability.yaml exec -T oncall \
+            python -c "import urllib.request; assert urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=6).read() == b'ok'"
+      - name: Collect container state and logs on failure
+        if: failure()
+        run: |
+          docker compose -f observability/compose.observability.yaml ps -a || true
+          docker compose -f observability/compose.observability.yaml logs --no-color --tail=150 || true
+      - name: Tear down ALL disposable monitoring resources
+        if: always()
+        run: |
+          docker compose -f observability/compose.observability.yaml down -v --remove-orphans || true
+          docker network rm devatlas-telemetry || true
