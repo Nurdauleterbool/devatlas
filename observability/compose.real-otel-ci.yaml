@@ -1,0 +1,13 @@
+# Disposable CI-only override, merged with the root compose.yaml.
+# No AWS credentials, production hosts, user data or published telemetry ports.
+services:
+  app:
+    environment:
+      DEVATLAS_OTEL_ENABLED: "true"
+      DEVATLAS_RELEASE: "ci-telemetry-smoke"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://collector:4318"
+    networks: [private, telemetry]
+networks:
+  telemetry:
+    external: true
+    name: devatlas-telemetry
