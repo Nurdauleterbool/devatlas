@@ -37,8 +37,7 @@ jobs:
       - name: Verify Alertmanager delivers synthetic alert to AI on-call fallback
         run: |
           # Run from within the internal Docker network; no public port or secrets.
-          docker compose -f observability/compose.observability.yaml exec -T oncall \\
-            python - < observability/check_alertmanager_delivery.py
+          docker compose -f observability/compose.observability.yaml exec -T oncall python - < observability/check_alertmanager_delivery.py
       - name: Collect container state and logs on failure
         if: failure()
         run: |
