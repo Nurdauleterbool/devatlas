@@ -63,7 +63,7 @@ class ProductionPromotionSafetyTests(unittest.TestCase):
         self.assertIn("grep -Fx 'APP_IMAGE=ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__'", check)
         self.assertNotIn("docker pull", check)
         self.assertNotIn("docker compose up", check)
-        self.assertNotIn("sed -i", check.split("candidate-check.sh <<'SCRIPT'")[1].split("\n          SCRIPT")[0])
+        self.assertNotIn("sed -i", check.split("candidate-check.sh <<'SCRIPT'", 1)[1].split("\nSCRIPT", 1)[0])
 
     def test_production_identity_never_changes(self):
         promote_script = self.jobs["promote"]["steps"][-1]["run"]
