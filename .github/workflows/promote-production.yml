@@ -1,51 +1,134 @@
 name: Promote verified development image to production
+
+# IMPORTANT: this workflow has NO push/workflow_run triggers and never
+# deploys Production without a deliberate manual workflow_dispatch.
 on:
   workflow_dispatch:
     inputs:
       release_sha:
-        description: '40-character git commit SHA already deployed and verified in development'
+        description: 'Full 40-character SHA already verified in Development'
         required: true
         type: string
+      confirm_production:
+        description: 'To authorize Production deployment type PROMOTE_TO_PRODUCTION'
+        required: true
+        type: string
+
 permissions:
   contents: read
   id-token: write
+
 concurrency:
   group: devatlas-aws-production
   cancel-in-progress: false
+
 jobs:
-  promote:
+  preflight:
     runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 25
+    timeout-minutes: 10
     env:
       AWS_REGION: us-east-1
-      DEV_INSTANCE_ID: ${{ vars.AWS_DEV_INSTANCE_ID }}
-      PROD_INSTANCE_ID: ${{ vars.AWS_INSTANCE_ID }}
+      DEV_INSTANCE_ID: i-02e00d28cf030334d
+      PROD_INSTANCE_ID: i-04c0e9c7e74eaba84
       RELEASE_SHA: ${{ inputs.release_sha }}
+      USER_CONFIRMATION: ${{ inputs.confirm_production }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Validate image and targets
+      - name: Fail closed unless running manually from main with explicit confirmation
         shell: bash
         run: |
           set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$USER_CONFIRMATION" = "PROMOTE_TO_PRODUCTION"
           [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$DEV_INSTANCE_ID" == i-* ]]
-          [[ "$PROD_INSTANCE_ID" == i-* ]]
+          test "$DEV_INSTANCE_ID" = "i-02e00d28cf030334d"
+          test "$PROD_INSTANCE_ID" = "i-04c0e9c7e74eaba84"
           test "$DEV_INSTANCE_ID" != "$PROD_INSTANCE_ID"
-          test -n "${{ vars.AWS_ROLE_ARN }}"
-          gh api "repos/Nurdauleterbool/devatlas/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
-      - uses: aws-actions/configure-aws-credentials@v4
+          test "$(gh api "repos/Nurdauleterbool/devatlas/commits/$RELEASE_SHA" --jq .sha)" = "$RELEASE_SHA"
+
+      # Do not declare "environment" on this job: the Development IAM OIDC
+      # trust is pinned to an exact GitHub main-branch "ref" subject.
+      - name: Assume Development-only role for read-only candidate verification
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::645023698537:role/DevAtlasGitHubDevelopmentRole
           aws-region: us-east-1
-      - name: Assert development deployed exact candidate
+
+      - name: Verify exact release on Development (SSM read-only script)
         shell: bash
         run: |
           set -euo pipefail
-          cmd=$(aws ssm send-command --instance-ids "$DEV_INSTANCE_ID" --document-name AWS-RunShellScript --parameters commands='["grep -Fx APP_IMAGE=ghcr.io/nurdauleterbool/devatlas:'"$RELEASE_SHA"' /opt/devatlas/.env.aws >/dev/null"]' --query Command.CommandId --output text)
-          aws ssm wait command-executed --command-id "$cmd" --instance-id "$DEV_INSTANCE_ID"
-          test "$(aws ssm get-command-invocation --command-id "$cmd" --instance-id "$DEV_INSTANCE_ID" --query ResponseCode --output text)" = 0
-      - name: Promote image to production with rollback
+          cat > candidate-check.sh <<'SCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+          envfile=/opt/devatlas/.env.aws
+          test -f "$envfile"
+          grep -Fx 'DEVATLAS_ENVIRONMENT=development' "$envfile" >/dev/null
+          grep -Fx 'APP_IMAGE=ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__' "$envfile" >/dev/null
+          docker ps --format '{{.Names}}' | grep -q '^devatlas-aws-devatlas-'
+          SCRIPT
+          sed -i "s/__IMAGE_SHA__/$RELEASE_SHA/g" candidate-check.sh
+          python3 - <<'PY'
+          import json
+          with open('candidate-check.sh') as f:
+              json.dump({'commands':[f.read()]},open('candidate-check.json','w'))
+          PY
+          command_id=$(aws ssm send-command \
+            --instance-ids "$DEV_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --parameters file://candidate-check.json \
+            --query 'Command.CommandId' --output text)
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "$DEV_INSTANCE_ID"
+          test "$(aws ssm get-command-invocation --command-id "$command_id" \
+            --instance-id "$DEV_INSTANCE_ID" --query ResponseCode --output text)" = 0
+          curl -fsS --retry 5 --retry-delay 3 \
+            https://32.201.201.75.sslip.io/api/v1/health | grep -q '"status":"ok"'
+          echo 'Development candidate SHA and health are verified.'
+
+  approval:
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Configure required reviewers for the "production" GitHub Environment
+    # in repository Settings > Environments to enforce a second approval.
+    environment:
+      name: production
+    steps:
+      - name: Human Production approval gate
+        run: |
+          echo "Production deployment was explicitly requested with a candidate"
+          echo "already confirmed on the separate Development instance."
+          echo "No AWS commands are executed in this approval job."
+
+  promote:
+    needs: approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # NO environment here! This keeps OIDC subject equal to refs/heads/main,
+    # exactly as specified in the existing Production IAM role's trust policy.
+    env:
+      AWS_REGION: us-east-1
+      PROD_INSTANCE_ID: i-04c0e9c7e74eaba84
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      USER_CONFIRMATION: ${{ inputs.confirm_production }}
+    steps:
+      - name: Recheck production target and explicit manual confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$USER_CONFIRMATION" = "PROMOTE_TO_PRODUCTION"
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$PROD_INSTANCE_ID" = "i-04c0e9c7e74eaba84"
+          test "$PROD_INSTANCE_ID" != "i-02e00d28cf030334d"
+
+      - name: Assume restricted Production-only OIDC role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::645023698537:role/DevAtlasGitHubDeployRole
+          aws-region: us-east-1
+
+      - name: Promote verified image via SSM with rollback on failure
         shell: bash
         run: |
           set -euo pipefail
@@ -56,6 +139,7 @@ jobs:
           envfile=/opt/devatlas/.env.aws
           compose=cloud/aws/compose.aws.yaml
           test -f "$envfile"
+          grep -Fx 'DEVATLAS_ENVIRONMENT=production' "$envfile" >/dev/null
           grep -q '^APP_IMAGE=' "$envfile"
           cp "$envfile" /opt/devatlas/.env.aws.rollback
           rollback() {
@@ -68,18 +152,27 @@ jobs:
           image="ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__"
           docker pull "$image"
           sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image|" "$envfile"
+          sed -i '/^DEVATLAS_RELEASE=/d' "$envfile"
+          printf 'DEVATLAS_RELEASE=__IMAGE_SHA__\n' >> "$envfile"
           docker network inspect devatlas-telemetry >/dev/null 2>&1 || docker network create devatlas-telemetry
           docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas
           domain=$(sed -n 's/^DOMAIN=//p' "$envfile")
-          curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "https://${domain}/api/v1/health" | grep -q '"status":"ok"'
+          test -n "$domain"
+          curl -fsS --retry 12 --retry-delay 5 --retry-all-errors \
+            "https://${domain}/api/v1/health" | grep -q '"status":"ok"'
           rm -f /opt/devatlas/.env.aws.rollback
           SCRIPT
           sed -i "s/__IMAGE_SHA__/$RELEASE_SHA/g" script.sh
           python3 - <<'PY'
           import json
-          json.dump({'commands':[open('script.sh').read()]},open('command.json','w'))
+          with open('script.sh') as f:
+              json.dump({'commands':[f.read()]},open('command.json','w'))
           PY
-          id=$(aws ssm send-command --instance-ids "$PROD_INSTANCE_ID" --document-name AWS-RunShellScript --parameters file://command.json --query Command.CommandId --output text)
-          aws ssm wait command-executed --command-id "$id" --instance-id "$PROD_INSTANCE_ID"
-          code=$(aws ssm get-command-invocation --command-id "$id" --instance-id "$PROD_INSTANCE_ID" --query ResponseCode --output text)
-          test "$code" = 0
+          command_id=$(aws ssm send-command \
+            --instance-ids "$PROD_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --parameters file://command.json \
+            --query 'Command.CommandId' --output text)
+          aws ssm wait command-executed --command-id "$command_id" --instance-id "$PROD_INSTANCE_ID"
+          test "$(aws ssm get-command-invocation --command-id "$command_id" \
+            --instance-id "$PROD_INSTANCE_ID" --query ResponseCode --output text)" = 0
