@@ -66,7 +66,7 @@ jobs:
           docker pull "$image"
           sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image|" "$envfile"
           sed -i '/^DEVATLAS_ENVIRONMENT=/d; /^DEVATLAS_RELEASE=/d' "$envfile"
-          printf 'DEVATLAS_ENVIRONMENT=development\\nDEVATLAS_RELEASE=__IMAGE_SHA__\\n' >> "$envfile"
+          printf 'DEVATLAS_ENVIRONMENT=development\nDEVATLAS_RELEASE=__IMAGE_SHA__\n' >> "$envfile"
           docker network inspect devatlas-telemetry >/dev/null 2>&1 || docker network create devatlas-telemetry
           docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas
           domain=$(sed -n 's/^DOMAIN=//p' "$envfile")
