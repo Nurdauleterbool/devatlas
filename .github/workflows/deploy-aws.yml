@@ -15,12 +15,13 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main' &&
       github.event.workflow_run.head_repository.full_name == 'Nurdauleterbool/devatlas'
-    environment: development
+    # OIDC trust is pinned to refs/heads/main; this job must not declare a GitHub Environment.
+    # Its new IAM role is restricted to the DEVELOPMENT instance only.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       AWS_REGION: us-east-1
-      INSTANCE_ID: ${{ vars.AWS_DEV_INSTANCE_ID }}
+      INSTANCE_ID: i-02e00d28cf030334d
       IMAGE_SHA: ${{ github.event.workflow_run.head_sha }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -28,14 +29,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${{ vars.AWS_ROLE_ARN }}"
+          # Never accept a Production target or implicit environment overrides.
+          test "$INSTANCE_ID" = "i-02e00d28cf030334d"
+          test "$INSTANCE_ID" != "i-04c0e9c7e74eaba84"
           [[ "$INSTANCE_ID" == i-* ]]
           [[ "$IMAGE_SHA" =~ ^[0-9a-f]{40}$ ]]
           latest=$(gh api repos/Nurdauleterbool/devatlas/commits/main --jq .sha)
           test "$latest" = "$IMAGE_SHA"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::645023698537:role/DevAtlasGitHubDevelopmentRole
           aws-region: us-east-1
       - name: Deploy to development using SSM
         shell: bash
@@ -49,6 +52,8 @@ jobs:
           compose=cloud/aws/compose.aws.yaml
           test -f "$envfile"
           grep -q '^APP_IMAGE=' "$envfile"
+          # The previous dev CloudFormation template did not set the environment.
+          # Set the DEVELOPMENT identity on this instance without touching Production.
           cp "$envfile" /opt/devatlas/.env.aws.rollback
           rollback() {
             trap - ERR
@@ -60,6 +65,8 @@ jobs:
           image="ghcr.io/nurdauleterbool/devatlas:__IMAGE_SHA__"
           docker pull "$image"
           sed -i "s|^APP_IMAGE=.*|APP_IMAGE=$image|" "$envfile"
+          sed -i '/^DEVATLAS_ENVIRONMENT=/d; /^DEVATLAS_RELEASE=/d' "$envfile"
+          printf 'DEVATLAS_ENVIRONMENT=development\\nDEVATLAS_RELEASE=__IMAGE_SHA__\\n' >> "$envfile"
           docker network inspect devatlas-telemetry >/dev/null 2>&1 || docker network create devatlas-telemetry
           docker compose --env-file "$envfile" -f "$compose" up -d --no-build devatlas
           domain=$(sed -n 's/^DOMAIN=//p' "$envfile")
