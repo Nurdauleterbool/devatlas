@@ -65,5 +65,20 @@ class OncallTests(unittest.TestCase):
     def test_clean_rejects_control_characters(self):
         self.assertEqual(responder.clean('test\n**danger**\x1b'), 'testdanger')
 
+    def test_ai_success_is_advisory_and_sanitized(self):
+        fake_response = io.BytesIO(b'{"choices":[{"message":{"content":"Review Grafana metrics; check logs."}}]}')
+        with mock.patch.dict(os.environ, {'OPENAI_API_KEY': 'dummy-ci-never-network'}):
+            with mock.patch.object(responder.urllib.request, 'urlopen', return_value=fake_response) as network:
+                name, status, description, recommendation = responder.assess(self.alert)
+                self.assertEqual(status, 'firing')
+                self.assertEqual(name, 'DevAtlasQuizFailuresHigh')
+                self.assertIn('Review Grafana metrics', recommendation)
+                self.assertNotIn(';', recommendation)
+                request = network.call_args.args[0]
+                self.assertEqual(request.full_url, 'https://api.openai.com/v1/chat/completions')
+                self.assertNotIn('dummy-ci-never-network', request.data.decode())
+                self.assertIn('High quiz failures', description)
+
+
 if __name__ == '__main__':
     unittest.main()
