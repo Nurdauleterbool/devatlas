@@ -1,12 +1,12 @@
 {
   "uid": "devatlas-business",
-  "title": "DevAtlas \u2014 Business & Reliability",
+  "title": "DevAtlas — Business & Reliability",
   "tags": [
     "devatlas",
     "opentelemetry"
   ],
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "timezone": "browser",
   "time": {
@@ -54,13 +54,15 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(devatlas_quiz_passes_total[5m])) / clamp_min(sum(rate(devatlas_quiz_submissions_total[5m])), 0.001)",
+          "expr": "sum(rate(devatlas_quiz_submissions_total{outcome=\"passed\"}[5m])) / clamp_min(sum(rate(devatlas_quiz_submissions_total[5m])), 0.001)",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percentunit"
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
         }
       },
       "options": {

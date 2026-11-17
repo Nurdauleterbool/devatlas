@@ -1,0 +1,61 @@
+name: Observability checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'observability/**'
+      - 'test_dashboard.py'
+      - 'tests/test_verify_live.py'
+      - '.github/workflows/observability-ci.yml'
+  pull_request:
+    paths:
+      - 'observability/**'
+      - 'test_dashboard.py'
+      - 'tests/test_verify_live.py'
+      - '.github/workflows/observability-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install YAML parser
+        run: python -m pip install 'PyYAML>=6,<7'
+      - name: Test dashboard
+        run: python -m unittest test_dashboard -v
+      - name: Test on-call responder
+        run: python -m unittest discover -s observability/oncall -p 'test_*.py' -v
+      - name: Test read-only live verifier (offline unit tests)
+        run: python -m unittest discover -s tests -p 'test_verify_live.py' -v
+      - name: Run static verifier
+        run: python observability/verify_live.py --static-only --json
+      - name: Verify monitoring configurations
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          root = Path('observability')
+          files = list(root.rglob('*.yaml')) + list(root.rglob('*.yml'))
+          docs = {str(f): yaml.safe_load(f.read_text()) for f in files}
+          assert len(files) >= 7, 'Monitoring YAML files missing'
+          rules = docs['observability/prometheus/alerts.yml']['groups']
+          alerts = {r['alert'] for group in rules for r in group['rules']}
+          assert {'DevAtlasQuizFailuresHigh', 'DevAtlasTelemetryMissing'} <= alerts
+          routes = docs['observability/alertmanager/alertmanager.yml']
+          assert routes['route']['receiver'] == 'ai-oncall'
+          assert any(w['url'] == 'http://oncall:8080/alerts'
+                     for r in routes['receivers'] for w in r.get('webhook_configs', []))
+          pipes = docs['observability/collector/config.yaml']['service']['pipelines']
+          assert {'traces', 'metrics', 'logs'} <= set(pipes)
+          print(f'PASS: {len(files)} YAML files, alert routing and OTLP pipelines')
+          PY
