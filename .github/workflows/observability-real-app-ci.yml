@@ -1,0 +1,59 @@
+name: Real DevAtlas OpenTelemetry to Prometheus smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'observability/**'
+      - '.github/workflows/observability-real-app-ci.yml'
+      - 'compose.yaml'
+      - 'backend/app/observability.py'
+      - 'backend/app/auth.py'
+  push:
+    branches: [main]
+    paths:
+      - 'observability/**'
+      - '.github/workflows/observability-real-app-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-to-monitoring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GRAFANA_ADMIN_PASSWORD: ci-disposable-monitoring-password-not-for-production
+      OPENAI_API_KEY: ''
+      GITHUB_TOKEN: ''
+      POSTGRES_PASSWORD: ci-disposable-database-password
+      DEVATLAS_OTEL_ENABLED: 'true'
+      APP_PORT: '8000'
+      DB_PORT: '5433'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare isolated network
+        run: docker network create devatlas-telemetry
+      - name: Start isolated monitoring stack
+        run: |
+          docker compose -f observability/compose.observability.yaml up -d --build
+          python observability/check_stack_e2e.py
+      - name: Start real DevAtlas app with OpenTelemetry enabled
+        run: |
+          docker compose -f compose.yaml -f observability/compose.real-otel-ci.yaml config --quiet
+          docker compose -f compose.yaml -f observability/compose.real-otel-ci.yaml up -d --build --wait
+      - name: Verify an actual DevAtlas business metric in Prometheus
+        run: python observability/check_real_app_telemetry.py
+      - name: Diagnostic logs on failure (no secrets)
+        if: failure()
+        run: |
+          docker compose -f observability/compose.observability.yaml ps -a || true
+          docker compose -f compose.yaml -f observability/compose.real-otel-ci.yaml ps -a || true
+          docker compose -f observability/compose.observability.yaml logs --no-color --tail=50 collector prometheus || true
+      - name: Remove disposable resources
+        if: always()
+        run: |
+          docker compose -f compose.yaml -f observability/compose.real-otel-ci.yaml down -v --remove-orphans || true
+          docker compose -f observability/compose.observability.yaml down -v --remove-orphans || true
+          docker network rm devatlas-telemetry || true
